@@ -11,10 +11,10 @@
 #endif
 
 #ifndef cairo_public
-	#ifdef LIBCAIRO_EXPORTS
-		#define cairo_public __declspec(dllexport)
+	#if defined(_LIB)
+		#define cairo_public extern
 	#else
-		#define cairo_public extern //__declspec(dllimport)
+		#define cairo_public __declspec(dllexport)
 	#endif
 #endif
 

@@ -51,7 +51,11 @@
 #endif
 
 #ifdef _MSC_VER
-#define cairo_public __declspec(dllexport)
+	#if defined(_LIB)
+		#define cairo_public extern
+	#else
+		#define cairo_public __declspec(dllexport)
+	#endif
 #endif
 
 #include <assert.h>
