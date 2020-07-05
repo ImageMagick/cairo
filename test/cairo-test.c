@@ -915,6 +915,10 @@ REPEAT:
     cairo_paint (cr);
     cairo_restore (cr);
 
+    cairo_select_font_face (cr, CAIRO_TEST_FONT_FAMILY " Sans",
+			    CAIRO_FONT_SLANT_NORMAL,
+			    CAIRO_FONT_WEIGHT_NORMAL);
+    
     /* Set all components of font_options to avoid backend differences
      * and reduce number of needed reference images. */
     font_options = cairo_font_options_create ();
@@ -1664,6 +1668,7 @@ cairo_test_create_surface_from_png (const cairo_test_context_t *ctx,
 {
     cairo_surface_t *image;
     cairo_status_t status;
+    char *unique_id;
 
     image = cairo_image_surface_create_from_png (filename);
     status = cairo_surface_status (image);
@@ -1679,6 +1684,10 @@ cairo_test_create_surface_from_png (const cairo_test_context_t *ctx,
 	    free (srcdir_filename);
 	}
     }
+    unique_id = strdup(filename);
+    cairo_surface_set_mime_data (image, CAIRO_MIME_TYPE_UNIQUE_ID,
+				 (unsigned char *)unique_id, strlen(unique_id),
+				 free, unique_id);
 
     return image;
 }

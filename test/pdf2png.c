@@ -49,7 +49,9 @@ int main (int argc, char *argv[])
     if (argc != 4)
 	FAIL ("usage: pdf2png input_file.pdf output_file.png page");
 
+#if !GLIB_CHECK_VERSION(2,36,0)
     g_type_init ();
+#endif
 
     if (g_path_is_absolute(filename)) {
 	absolute = g_strdup (filename);
@@ -65,10 +67,12 @@ int main (int argc, char *argv[])
 	FAIL (error->message);
 
     document = poppler_document_new_from_file (uri, NULL, &error);
+    g_free (uri);
     if (document == NULL)
 	FAIL (error->message);
 
     page = poppler_document_get_page_by_label (document, page_label);
+    g_object_unref (document);
     if (page == NULL)
 	FAIL ("page not found");
 

@@ -299,8 +299,10 @@ _type_next_token (Type *t)
 	prev = &b->next;
 	b = b->next;
     }
+    assert (prev != NULL);
 
     bb = malloc (sizeof (struct _bitmap));
+
     *prev = bb;
     bb->next = b;
     bb->min = min;
@@ -519,7 +521,7 @@ _fini_trace (void)
 
 /* Format a double in a locale independent way and trim trailing
  * zeros.  Based on code from Alex Larson <alexl@redhat.com>.
- * http://mail.gnome.org/archives/gtk-devel-list/2001-October/msg00087.html
+ * https://mail.gnome.org/archives/gtk-devel-list/2001-October/msg00087.html
  *
  * The code in the patch is copyright Red Hat, Inc under the LGPL.
  */
@@ -1582,6 +1584,10 @@ _status_to_string (cairo_status_t status)
 	f(INVALID_MESH_CONSTRUCTION);
 	f(DEVICE_FINISHED);
 	f(JBIG2_GLOBAL_MISSING);
+	f(PNG_ERROR);
+	f(FREETYPE_ERROR);
+	f(WIN32_GDI_ERROR);
+	f(TAG_ERROR);
     case CAIRO_STATUS_LAST_STATUS:
 	break;
     }

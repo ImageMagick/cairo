@@ -219,6 +219,16 @@ typedef enum _csi_status {
     CSI_STATUS_INVALID_CLUSTERS = CAIRO_STATUS_INVALID_CLUSTERS,
     CSI_STATUS_INVALID_SLANT = CAIRO_STATUS_INVALID_SLANT,
     CSI_STATUS_INVALID_WEIGHT = CAIRO_STATUS_INVALID_WEIGHT,
+    CSI_STATUS_INVALID_SIZE = CAIRO_STATUS_INVALID_SIZE,
+    CSI_STATUS_USER_FONT_NOT_IMPLEMENTED = CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED,
+    CSI_STATUS_DEVICE_TYPE_MISMATCH = CAIRO_STATUS_DEVICE_TYPE_MISMATCH,
+    CSI_STATUS_DEVICE_ERROR = CAIRO_STATUS_DEVICE_ERROR,
+    CSI_STATUS_INVALID_MESH_CONSTRUCTION = CAIRO_STATUS_INVALID_MESH_CONSTRUCTION,
+    CSI_STATUS_DEVICE_FINISHED = CAIRO_STATUS_DEVICE_FINISHED,
+    CSI_STATUS_JBIG2_GLOBAL_MISSING = CAIRO_STATUS_JBIG2_GLOBAL_MISSING,
+    CSI_STATUS_PNG_ERROR = CAIRO_STATUS_PNG_ERROR,
+    CSI_STATUS_FREETYPE_ERROR = CAIRO_STATUS_FREETYPE_ERROR,
+    CSI_STATUS_WIN32_GDI_ERROR = CAIRO_STATUS_WIN32_GDI_ERROR,
 
     /* cairo-script-interpreter specific errors */
 
@@ -906,16 +916,9 @@ csi_number_get_value (const csi_object_t *obj)
     }
 }
 
-static inline csi_status_t
+csi_status_t
 _csi_stack_push (csi_t *ctx, csi_stack_t *stack,
-		 const csi_object_t *obj)
-{
-    if (_csi_unlikely (stack->len == stack->size))
-	return _csi_stack_push_internal (ctx, stack, obj);
-
-    stack->objects[stack->len++] = *obj;
-    return CSI_STATUS_SUCCESS;
-}
+		 const csi_object_t *obj);
 
 static inline csi_boolean_t
 _csi_check_ostack (csi_t *ctx, csi_integer_t count)

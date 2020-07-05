@@ -68,6 +68,9 @@ cairo_image_surface_get_stride
 <SECTION>
 <FILE>cairo-pdf</FILE>
 CAIRO_HAS_PDF_SURFACE
+CAIRO_PDF_OUTLINE_ROOT
+cairo_pdf_outline_flags_t
+cairo_pdf_metadata_t
 cairo_pdf_surface_create
 cairo_pdf_surface_create_for_stream
 cairo_pdf_surface_restrict_to_version
@@ -75,6 +78,10 @@ cairo_pdf_version_t
 cairo_pdf_get_versions
 cairo_pdf_version_to_string
 cairo_pdf_surface_set_size
+cairo_pdf_surface_add_outline
+cairo_pdf_surface_set_metadata
+cairo_pdf_surface_set_page_label
+cairo_pdf_surface_set_thumbnail_size
 </SECTION>
 
 <SECTION>
@@ -118,6 +125,8 @@ cairo_recording_surface_get_extents
 cairo_skia_context_t
 cairo_skia_surface_t
 format_to_sk_config
+cairo_skia_surface_create
+cairo_skia_surface_create_for_data
 <SUBSECTION Private>
 cairo_skia_context
 cairo_skia_surface
@@ -129,6 +138,7 @@ CAIRO_HAS_WIN32_SURFACE
 cairo_win32_surface_create
 cairo_win32_surface_create_with_dib
 cairo_win32_surface_create_with_ddb
+cairo_win32_surface_create_with_format
 cairo_win32_printing_surface_create
 cairo_win32_surface_get_dc
 cairo_win32_surface_get_image
@@ -202,10 +212,13 @@ cairo_xcb_device_debug_set_precision
 CAIRO_HAS_SVG_SURFACE
 cairo_svg_surface_create
 cairo_svg_surface_create_for_stream
+cairo_svg_surface_get_document_unit
+cairo_svg_surface_set_document_unit
 cairo_svg_surface_restrict_to_version
 cairo_svg_version_t
 cairo_svg_get_versions
 cairo_svg_version_to_string
+cairo_svg_unit_t
 </SECTION>
 
 <SECTION>
@@ -235,6 +248,10 @@ cairo_device_observer_stroke_elapsed
 <SECTION>
 <FILE>cairo-surface</FILE>
 CAIRO_HAS_MIME_SURFACE
+CAIRO_MIME_TYPE_CCITT_FAX
+CAIRO_MIME_TYPE_CCITT_FAX_PARAMS
+CAIRO_MIME_TYPE_EPS
+CAIRO_MIME_TYPE_EPS_PARAMS
 CAIRO_MIME_TYPE_JBIG2
 CAIRO_MIME_TYPE_JBIG2_GLOBAL
 CAIRO_MIME_TYPE_JBIG2_GLOBAL_ID
@@ -408,6 +425,14 @@ cairo_raster_source_finish_func_t
 </SECTION>
 
 <SECTION>
+<FILE>cairo-tag</FILE>
+CAIRO_TAG_DEST
+CAIRO_TAG_LINK
+cairo_tag_begin
+cairo_tag_end
+</SECTION>
+
+<SECTION>
 <FILE>cairo-matrix</FILE>
 cairo_matrix_t
 cairo_matrix_init
@@ -489,6 +514,8 @@ cairo_font_options_get_hint_style
 cairo_hint_metrics_t
 cairo_font_options_set_hint_metrics
 cairo_font_options_get_hint_metrics
+cairo_font_options_get_variations
+cairo_font_options_set_variations
 </SECTION>
 
 <SECTION>

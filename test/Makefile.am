@@ -158,6 +158,7 @@ ps-features			\
 svg-clip			\
 svg-surface			\
 toy-font-face			\
+font-variations			\
 user-data
 
 # A target to summarise the failures
@@ -323,6 +324,7 @@ CLEANFILES +=					\
 	ps-surface-source.out.ps		\
 	pdf-features.pdf			\
 	pdf-mime-data.out*			\
+	pdf-tagged-text.out*                    \
 	ps-features.ps				\
 	svg-clip.svg				\
 	svg-surface.svg				\

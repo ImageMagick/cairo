@@ -833,12 +833,13 @@ _cairo_xcb_surface_fallback (cairo_xcb_surface_t *surface,
     image = (cairo_image_surface_t *)
 	    _get_image (surface, TRUE, 0, 0, surface->width, surface->height);
 
-    /* If there was a deferred clear, _get_image applied it */
-    if (image->base.status == CAIRO_STATUS_SUCCESS) {
-	surface->deferred_clear = FALSE;
+    if (image->base.status != CAIRO_STATUS_SUCCESS)
+	return &image->base;
 
-	surface->fallback = image;
-    }
+    /* If there was a deferred clear, _get_image applied it */
+    surface->deferred_clear = FALSE;
+
+    surface->fallback = image;
 
     return &surface->fallback->base;
 }
@@ -1074,14 +1075,15 @@ _cairo_xcb_surface_create_internal (cairo_xcb_screen_t		*screen,
 {
     cairo_xcb_surface_t *surface;
 
-    surface = malloc (sizeof (cairo_xcb_surface_t));
+    surface = _cairo_malloc (sizeof (cairo_xcb_surface_t));
     if (unlikely (surface == NULL))
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
 
     _cairo_surface_init (&surface->base,
 			 &_cairo_xcb_surface_backend,
 			 &screen->connection->device,
-			 _cairo_content_from_pixman_format (pixman_format));
+			 _cairo_content_from_pixman_format (pixman_format),
+			 FALSE); /* is_vector */
 
     surface->connection = _cairo_xcb_connection_reference (screen->connection);
     surface->screen = screen;
