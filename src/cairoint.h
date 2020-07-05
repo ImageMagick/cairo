@@ -51,7 +51,14 @@
 #endif
 
 #ifdef _MSC_VER
-#define cairo_public __declspec(dllexport)
+  #if defined(_LIB)
+    #define cairo_public extern
+  #elif defined(PACKAGE)
+    #define cairo_public extern __declspec(dllexport)
+  #else
+    #define cairo_public __declspec(dllimport)
+  #endif
+  #pragma comment(lib,"msimg32.lib")
 #endif
 
 #include <assert.h>
