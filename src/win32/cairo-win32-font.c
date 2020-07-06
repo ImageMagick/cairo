@@ -2048,6 +2048,8 @@ cairo_win32_font_face_create_for_logfontw_hfont (LOGFONTW *logfont, HFONT font)
     cairo_hash_table_t *hash_table;
     cairo_status_t status;
 
+    CAIRO_MUTEX_INITIALIZE();
+
     hash_table = _cairo_win32_font_face_hash_table_lock ();
     if (unlikely (hash_table == NULL)) {
         _cairo_error_throw (CAIRO_STATUS_NO_MEMORY);
