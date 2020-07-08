@@ -51,11 +51,11 @@
 #endif
 
 #ifndef cairo_public
-	#if defined(_LIB)
-		#define cairo_public extern
-	#else
-		#define cairo_public __declspec(dllexport)
-	#endif
+# if defined (_MSC_VER) && ! defined (_LIB)
+#  define cairo_public __declspec(dllimport)
+# else
+#  define cairo_public
+# endif
 #endif
 
 CAIRO_BEGIN_DECLS
