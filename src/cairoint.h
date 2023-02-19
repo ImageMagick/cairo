@@ -51,7 +51,7 @@
 #ifdef _MSC_VER
   #if defined(_LIB)
     #define cairo_public extern
-  #elif defined(PACKAGE)
+  #elif defined(CAIRO_BUILD)
     #define cairo_public extern __declspec(dllexport)
   #else
     #define cairo_public __declspec(dllimport)
