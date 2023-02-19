@@ -45,11 +45,7 @@
    This file was part of GNU Binutils.
    */
 
-#define _GNU_SOURCE
-
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #define true 1
 #define false 0
@@ -65,7 +61,6 @@
 
 #if HAVE_BFD
 #include <bfd.h>
-#include <libiberty.h>
 
 struct symtab {
     bfd *bfd;
@@ -111,10 +106,10 @@ _symtab_init (struct symtab *symtab, const char *filename)
     if (! bfd_check_format_matches (symtab->bfd, bfd_object, &matching))
 	goto BAIL;
 
-    symcount = bfd_read_minisymbols (symtab->bfd, false, (PTR) &symtab->syms, &size);
+    symcount = bfd_read_minisymbols (symtab->bfd, false, (void **) &symtab->syms, &size);
     if (symcount == 0) {
 	symcount = bfd_read_minisymbols (symtab->bfd, true /* dynamic */ ,
-		(PTR) &symtab->syms, &size);
+		(void **) &symtab->syms, &size);
     }
     if (symcount < 0)
 	goto BAIL;
@@ -145,14 +140,14 @@ find_address_in_section (bfd *abfd,
     if (symbol->found)
 	return;
 
-    if ((bfd_get_section_flags (symtab->bfd, section) & SEC_ALLOC) == 0)
+    if ((bfd_section_flags (section) & SEC_ALLOC) == 0)
 	return;
 
-    vma = bfd_get_section_vma (symtab->bfd, section);
+    vma = bfd_section_vma (section);
     if (symbol->pc < vma)
 	return;
 
-    size = bfd_section_size (symtab->bfd, section);
+    size = bfd_section_size (section);
     if (symbol->pc >= vma + size)
 	return;
 
@@ -267,7 +262,7 @@ lookup_symbol (char *buf, int buflen, const void *ptr)
     int bucket;
     int len;
 
-    bucket = (unsigned long) ptr % (sizeof (symbol_cache_hash) / sizeof (symbol_cache_hash[0]));
+    bucket = (uintptr_t) ptr % (sizeof (symbol_cache_hash) / sizeof (symbol_cache_hash[0]));
     pthread_mutex_lock (&symbol_cache_mutex);
     for (cache = symbol_cache_hash[bucket];
 	 cache != NULL;

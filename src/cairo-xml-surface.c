@@ -209,13 +209,15 @@ static const char *
 _format_to_string (cairo_format_t format)
 {
     switch (format) {
-    case CAIRO_FORMAT_ARGB32:  return "ARGB32";
-    case CAIRO_FORMAT_RGB30:   return "RGB30";
-    case CAIRO_FORMAT_RGB24:   return "RGB24";
-    case CAIRO_FORMAT_RGB16_565:   return "RGB16_565";
-    case CAIRO_FORMAT_A8:      return "A8";
-    case CAIRO_FORMAT_A1:      return "A1";
-    case CAIRO_FORMAT_INVALID: return "INVALID";
+    case CAIRO_FORMAT_ARGB32:    return "ARGB32";
+    case CAIRO_FORMAT_RGB30:     return "RGB30";
+    case CAIRO_FORMAT_RGB24:     return "RGB24";
+    case CAIRO_FORMAT_RGB16_565: return "RGB16_565";
+    case CAIRO_FORMAT_RGB96F:    return "RGB96F";
+    case CAIRO_FORMAT_RGBA128F:  return "RGBA128F";
+    case CAIRO_FORMAT_A8:        return "A8";
+    case CAIRO_FORMAT_A1:        return "A1";
+    case CAIRO_FORMAT_INVALID:   return "INVALID";
     }
     ASSERT_NOT_REACHED;
     return "INVALID";
@@ -1007,7 +1009,7 @@ _cairo_xml_emit_scaled_font (cairo_xml_t *xml,
     }
 
     _cairo_xml_indent (xml, -2);
-    _cairo_xml_printf (xml, "<scaled-font>");
+    _cairo_xml_printf (xml, "</scaled-font>");
 
     return status;
 }

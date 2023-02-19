@@ -27,6 +27,7 @@
     <xi:include href="xml/cairo-font-options.xml"/>
     <xi:include href="xml/cairo-ft.xml"/>
     <xi:include href="xml/cairo-win32-fonts.xml"/>
+    <xi:include href="xml/cairo-dwrite-fonts.xml"/>
     <xi:include href="xml/cairo-quartz-fonts.xml"/>
     <xi:include href="xml/cairo-user-fonts.xml"/>
   </chapter>
@@ -40,7 +41,6 @@
     <xi:include href="xml/cairo-ps.xml"/>
     <xi:include href="xml/cairo-recording.xml"/>
     <xi:include href="xml/cairo-win32.xml"/>
-    <!--xi:include href="xml/cairo-beos.xml"/-->
     <xi:include href="xml/cairo-svg.xml"/>
     <xi:include href="xml/cairo-quartz.xml" />
     <!--xi:include href="xml/cairo-quartz-image.xml"/-->
@@ -56,32 +56,53 @@
     <xi:include href="xml/cairo-version.xml"/>
     <xi:include href="xml/cairo-types.xml"/>
   </chapter>
-  <index id="index-all">
+  <index id="api-index-all">
     <title>Index</title>
+    <xi:include href="xml/api-index-full.xml"/>
   </index>
-  <index id="index-1.2" role="1.2">
+  <!--index id="deprecated-api-index">
+    <title>Index of deprecated symbols</title>
+    <xi:include href="xml/api-index-deprecated.xml"/>
+  </index-->
+  <index id="api-index-1-0">
+    <title>Index of new symbols in 1.0</title>
+    <xi:include href="xml/api-index-1.0.xml"/>
+  </index>
+  <index id="api-index-1-2">
     <title>Index of new symbols in 1.2</title>
+    <xi:include href="xml/api-index-1.2.xml"/>
   </index>
-  <index id="index-1.4" role="1.4">
+  <index id="api-index-1-4">
     <title>Index of new symbols in 1.4</title>
+    <xi:include href="xml/api-index-1.4.xml"/>
   </index>
-  <index id="index-1.6" role="1.6">
+  <index id="api-index-1-6">
     <title>Index of new symbols in 1.6</title>
+    <xi:include href="xml/api-index-1.6.xml"/>
   </index>
-  <index id="index-1.8" role="1.8">
+  <index id="api-index-1-8">
     <title>Index of new symbols in 1.8</title>
+    <xi:include href="xml/api-index-1.8.xml"/>
   </index>
-  <index id="index-1.10" role="1.10">
+  <index id="api-index-1-10">
     <title>Index of new symbols in 1.10</title>
+    <xi:include href="xml/api-index-1.10.xml"/>
   </index>
-  <index id="index-1.12" role="1.12">
+  <index id="api-index-1-12">
     <title>Index of new symbols in 1.12</title>
+    <xi:include href="xml/api-index-1.12.xml"/>
   </index>
-  <index id="index-1.14" role="1.14">
+  <index id="api-index-1-14">
     <title>Index of new symbols in 1.14</title>
+    <xi:include href="xml/api-index-1.14.xml"/>
   </index>
-  <index id="index-1.16" role="1.16">
+  <index id="api-index-1-16">
     <title>Index of new symbols in 1.16</title>
+    <xi:include href="xml/api-index-1.16.xml"/>
+  </index>
+  <index id="api-index-1-18">
+    <title>Index of new symbols in 1.18</title>
+    <xi:include href="xml/api-index-1.18.xml"/>
   </index>
   <xi:include href="language-bindings.xml"/>
 </book>

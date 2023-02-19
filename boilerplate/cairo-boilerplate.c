@@ -24,13 +24,13 @@
  * Author: Carl D. Worth <cworth@cworth.org>
  */
 
-#define CAIRO_VERSION_H 1
-
 #include "cairo-boilerplate-private.h"
 #include "cairo-boilerplate-scaled-font.h"
+#include "cairo-malloc-private.h"
 
 #include <pixman.h>
 
+#include <cairo-ctype-inline.h>
 #include <cairo-types-private.h>
 #include <cairo-scaled-font-private.h>
 
@@ -38,13 +38,8 @@
 #include <cairo-script.h>
 #endif
 
-/* get the "real" version info instead of dummy cairo-version.h */
-#undef CAIRO_VERSION_H
-#include "../cairo-version.h"
-
 #include <stddef.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -183,7 +178,7 @@ _cairo_boilerplate_image_create_similar (cairo_surface_t *other,
     }
 
     stride = cairo_format_stride_for_width(format, width);
-    ptr = malloc (stride* height);
+    ptr = _cairo_malloc (stride * height);
 
     surface = cairo_image_surface_create_for_data (ptr, format,
 						   width, height, stride);
@@ -232,7 +227,7 @@ _cairo_boilerplate_image16_create_similar (cairo_surface_t *other,
     }
 
     stride = cairo_format_stride_for_width(format, width);
-    ptr = malloc (stride* height);
+    ptr = _cairo_malloc (stride * height);
 
     surface = cairo_image_surface_create_for_data (ptr, format,
 						   width, height, stride);
@@ -245,7 +240,7 @@ static char *
 _cairo_boilerplate_image_describe (void *closure)
 {
     char *s;
-  
+
     xasprintf (&s, "pixman %s", pixman_version_string ());
 
     return s;
@@ -566,7 +561,7 @@ _cairo_boilerplate_target_matches_name (const cairo_boilerplate_target_t *target
     if (! (name_len == 1 && 0 == strncmp (tname, "?", 1))) { /* wildcard? */
 	if (0 != strncmp (target->name, tname, name_len)) /* exact match? */
 	    return FALSE;
-	if (isalnum (target->name[name_len]))
+	if (_cairo_isalnum (target->name[name_len]))
 	    return FALSE;
     }
 
@@ -950,7 +945,7 @@ POPEN:
 
     *close_cb = pclose;
     sprintf (command, "%s %s %d", any2ppm, filename, page);
-    return popen (command, "rb");
+    return popen (command, "r");
 }
 
 static cairo_bool_t
@@ -1046,6 +1041,10 @@ cairo_boilerplate_convert_to_image (const char *filename,
     int (*close_cb) (FILE *);
     int ret;
 
+    if (getenv ("CAIRO_BOILERPLATE_OPEN_NO_DAEMON") != NULL) {
+	flags |= CAIRO_BOILERPLATE_OPEN_NO_DAEMON;
+    }
+
   RETRY:
     file = cairo_boilerplate_open_any2ppm (filename, page, flags, &close_cb);
     if (file == NULL) {
@@ -1062,7 +1061,11 @@ cairo_boilerplate_convert_to_image (const char *filename,
     /* check for fatal errors from the interpreter */
     if (ret) { /* any2pmm should never die... */
 	cairo_surface_destroy (image);
-	return cairo_boilerplate_surface_create_in_error (CAIRO_STATUS_INVALID_STATUS);
+	if (getenv ("CAIRO_BOILERPLATE_DO_NOT_CRASH_ON_ANY2PPM_ERROR") != NULL) {
+	    return cairo_boilerplate_surface_create_in_error (CAIRO_STATUS_WRITE_ERROR);
+	} else {
+	    return cairo_boilerplate_surface_create_in_error (CAIRO_STATUS_INVALID_STATUS);
+	}
     }
 
     if (ret == 0 && cairo_surface_status (image) == CAIRO_STATUS_READ_ERROR) {

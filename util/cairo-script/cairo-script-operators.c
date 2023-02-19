@@ -465,6 +465,7 @@ _csi_ostack_get_matrix (csi_t *ctx, unsigned int i, cairo_matrix_t *out)
 			       csi_number_get_value (&obj->datum.array->stack.objects[5]));
 	    return CSI_STATUS_SUCCESS;
 	}
+	/* else fall through */
     default:
 	return _csi_error (CSI_STATUS_INVALID_SCRIPT);
     }
@@ -2967,6 +2968,12 @@ _image_read_raw (csi_t *ctx,
     case CAIRO_FORMAT_ARGB32:
 	instride = rowlen = 4 * width;
 	break;
+    case CAIRO_FORMAT_RGB96F:
+	instride = rowlen = 12 * width;
+	break;
+    case CAIRO_FORMAT_RGBA128F:
+	instride = rowlen = 16 * width;
+	break;
     }
     len = rowlen * height;
 
@@ -3066,6 +3073,8 @@ err_decompress:
 #endif
 		    }
 		    break;
+		case CAIRO_FORMAT_RGB96F:
+		case CAIRO_FORMAT_RGBA128F:
 		case CAIRO_FORMAT_RGB30:
 		case CAIRO_FORMAT_INVALID:
 		case CAIRO_FORMAT_ARGB32:
@@ -3155,6 +3164,8 @@ err_decompress:
 #endif
 		}
 		break;
+	    case CAIRO_FORMAT_RGBA128F:
+	    case CAIRO_FORMAT_RGB96F:
 	    case CAIRO_FORMAT_RGB30:
 	    case CAIRO_FORMAT_INVALID:
 	    case CAIRO_FORMAT_ARGB32:
@@ -3191,6 +3202,8 @@ err_decompress:
 	    case CAIRO_FORMAT_A8:
 		break;
 
+	    case CAIRO_FORMAT_RGBA128F:
+	    case CAIRO_FORMAT_RGB96F:
 	    case CAIRO_FORMAT_RGB30:
 	    case CAIRO_FORMAT_RGB24:
 	    case CAIRO_FORMAT_INVALID:
@@ -5149,6 +5162,27 @@ _set_line_width (csi_t *ctx)
 }
 
 static csi_status_t
+_set_hairline (csi_t *ctx)
+{
+    csi_status_t status;
+    cairo_t *cr;
+    cairo_bool_t set_hairline = FALSE; /* silence the compiler */
+
+    check (2);
+
+    status = _csi_ostack_get_boolean (ctx, 0, &set_hairline);
+    if (_csi_unlikely (status))
+	return status;
+    status = _csi_ostack_get_context (ctx, 1, &cr);
+	if (_csi_unlikely (status))
+	return status;
+
+    cairo_set_hairline (cr, set_hairline);
+	pop (1);
+	return CSI_STATUS_SUCCESS;
+}
+
+static csi_status_t
 _set_matrix (csi_t *ctx)
 {
     csi_object_t *obj;
@@ -6612,6 +6646,7 @@ _defs[] = {
     { "set-line-cap", _set_line_cap },
     { "set-line-join", _set_line_join },
     { "set-line-width", _set_line_width },
+    { "set-hairline", _set_hairline },
     { "set-matrix", _set_matrix },
     { "set-miter-limit", _set_miter_limit },
     { "set-mime-data", _set_mime_data },
@@ -6764,6 +6799,9 @@ _integer_constants[] = {
     { "RGB16_565",		CAIRO_FORMAT_RGB16_565 },
     { "RGB24",			CAIRO_FORMAT_RGB24 },
     { "ARGB32",			CAIRO_FORMAT_ARGB32 },
+    { "RGB30",			CAIRO_FORMAT_RGB30 },
+    { "RGB96F",			CAIRO_FORMAT_RGB96F },
+    { "RGBA128F",		CAIRO_FORMAT_RGBA128F },
     { "INVALID",		CAIRO_FORMAT_INVALID },
 
     { NULL, 0 }

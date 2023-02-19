@@ -27,6 +27,16 @@ cairo_win32_scaled_font_get_device_to_logical
 </SECTION>
 
 <SECTION>
+<FILE>cairo-dwrite-fonts</FILE>
+CAIRO_HAS_DWRITE_FONT
+cairo_dwrite_font_face_create_for_dwrite_fontface
+cairo_dwrite_font_face_get_rendering_params
+cairo_dwrite_font_face_set_rendering_params
+cairo_dwrite_font_face_get_measuring_mode
+cairo_dwrite_font_face_set_measuring_mode
+</SECTION>
+
+<SECTION>
 <FILE>cairo-quartz-fonts</FILE>
 CAIRO_HAS_QUARTZ_FONT
 cairo_quartz_font_face_create_for_cgfont
@@ -45,10 +55,14 @@ cairo_user_font_face_set_init_func
 cairo_user_font_face_get_init_func
 cairo_user_font_face_set_render_glyph_func
 cairo_user_font_face_get_render_glyph_func
+cairo_user_font_face_set_render_color_glyph_func
+cairo_user_font_face_get_render_color_glyph_func
 cairo_user_font_face_set_unicode_to_glyph_func
 cairo_user_font_face_get_unicode_to_glyph_func
 cairo_user_font_face_set_text_to_glyphs_func
 cairo_user_font_face_get_text_to_glyphs_func
+cairo_user_scaled_font_get_foreground_marker
+cairo_user_scaled_font_get_foreground_source
 </SECTION>
 
 <SECTION>
@@ -80,6 +94,7 @@ cairo_pdf_version_to_string
 cairo_pdf_surface_set_size
 cairo_pdf_surface_add_outline
 cairo_pdf_surface_set_metadata
+cairo_pdf_surface_set_custom_metadata
 cairo_pdf_surface_set_page_label
 cairo_pdf_surface_set_thumbnail_size
 </SECTION>
@@ -118,18 +133,6 @@ CAIRO_HAS_RECORDING_SURFACE
 cairo_recording_surface_create
 cairo_recording_surface_ink_extents
 cairo_recording_surface_get_extents
-</SECTION>
-
-<SECTION>
-<FILE>cairo-skia</FILE>
-cairo_skia_context_t
-cairo_skia_surface_t
-format_to_sk_config
-cairo_skia_surface_create
-cairo_skia_surface_create_for_data
-<SUBSECTION Private>
-cairo_skia_context
-cairo_skia_surface
 </SECTION>
 
 <SECTION>
@@ -516,6 +519,14 @@ cairo_font_options_set_hint_metrics
 cairo_font_options_get_hint_metrics
 cairo_font_options_get_variations
 cairo_font_options_set_variations
+cairo_color_mode_t
+cairo_font_options_set_color_mode
+cairo_font_options_get_color_mode
+CAIRO_COLOR_PALETTE_DEFAULT
+cairo_font_options_set_color_palette
+cairo_font_options_get_color_palette
+cairo_font_options_set_custom_palette_color
+cairo_font_options_get_custom_palette_color
 </SECTION>
 
 <SECTION>
@@ -673,6 +684,8 @@ cairo_show_page
 cairo_get_reference_count
 cairo_set_user_data
 cairo_get_user_data
+cairo_set_hairline
+cairo_get_hairline
 <SUBSECTION Private>
 cairo_public
 CAIRO_BEGIN_DECLS

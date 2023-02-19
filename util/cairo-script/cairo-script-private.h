@@ -35,9 +35,7 @@
 #ifndef CAIRO_SCRIPT_PRIVATE_H
 #define CAIRO_SCRIPT_PRIVATE_H
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include "cairo-script-interpreter.h"
 
@@ -286,7 +284,7 @@ typedef cairo_bool_t csi_boolean_t;
 typedef csi_status_t (*csi_operator_t) (csi_t *);
 typedef float csi_real_t;
 typedef long csi_integer_t;
-typedef long csi_name_t;
+typedef intptr_t csi_name_t;
 typedef struct _csi_array csi_array_t;
 typedef struct _csi_buffer csi_buffer_t;
 typedef struct _csi_compound_object csi_compound_object_t;
@@ -916,7 +914,7 @@ csi_number_get_value (const csi_object_t *obj)
     }
 }
 
-csi_status_t
+csi_private csi_status_t
 _csi_stack_push (csi_t *ctx, csi_stack_t *stack,
 		 const csi_object_t *obj);
 

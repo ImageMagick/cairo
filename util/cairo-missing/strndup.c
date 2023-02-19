@@ -37,15 +37,19 @@ char *
 strndup (const char *s,
 	 size_t      n)
 {
+    const char *end;
     size_t len;
     char *sdup;
 
     if (s == NULL)
 	return NULL;
 
-    len = strlen (s);
-    if (len > n)
+    end = memchr (s, 0, n);
+    if (end)
+	len = end - s;
+    else
 	len = n;
+
     sdup = (char *) _cairo_malloc (len + 1);
     if (sdup != NULL) {
 	memcpy (sdup, s, len);

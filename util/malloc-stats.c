@@ -170,75 +170,83 @@ func_stats_add (const void *caller, int is_realloc, size_t size)
 
 /* wrapper stuff */
 
-#include <malloc.h>
+#include <dlfcn.h>
 
-static void *(*old_malloc)(size_t, const void *);
-static void *(*old_realloc)(void *, size_t, const void *);
+static void *(*old_malloc)(size_t);
+static void *(*old_calloc)(size_t, size_t);
+static void *(*old_realloc)(void *, size_t);
+static int enable_hook = 0;
 
-static void *my_malloc(size_t, const void *);
-static void *my_realloc(void *, size_t, const void *);
+static void init(void);
 
-static void
-save_hooks (void)
+void *
+malloc(size_t size)
 {
-	old_malloc  = __malloc_hook;
-	old_realloc = __realloc_hook;
-}
+    if (!old_malloc)
+      init ();
 
-static void
-old_hooks (void)
-{
-	__malloc_hook  = old_malloc;
-	__realloc_hook  = old_realloc;
-}
-
-static void
-my_hooks (void)
-{
-	/* should always save the current value */
-	save_hooks ();
-
-	__malloc_hook  = my_malloc;
-	__realloc_hook  = my_realloc;
-}
-
-static void *
-my_malloc(size_t size, const void *caller)
-{
-	void *ret;
-
-	old_hooks ();
-
+    if (enable_hook) {
+	enable_hook = 0;
+	void *caller = __builtin_return_address(0);
 	func_stats_add (caller, 0, size);
+	enable_hook = 1;
+    }
 
-	ret = malloc (size);
-	my_hooks ();
-
-	return ret;
+    return old_malloc (size);
 }
 
-static void *
-my_realloc(void *ptr, size_t size, const void *caller)
+void *
+calloc(size_t nmemb, size_t size)
 {
-	void *ret;
+    if (!old_calloc)
+      init ();
 
-	old_hooks ();
+    if (enable_hook) {
+	enable_hook = 0;
+	void *caller = __builtin_return_address(0);
+	func_stats_add (caller, 0, nmemb * size);
+	enable_hook = 1;
+    }
 
+    return old_calloc (nmemb, size);
+}
+
+void *
+realloc(void *ptr, size_t size)
+{
+    if (!old_malloc)
+      init ();
+
+    if (enable_hook) {
+	enable_hook = 0;
+	void *caller = __builtin_return_address(0);
 	func_stats_add (caller, 1, size);
+	enable_hook = 1;
+    }
 
-	ret = realloc (ptr, size);
-	my_hooks ();
-
-	return ret;
+    return old_realloc (ptr, size);
 }
 
 static void
-my_init_hook(void) {
-	my_hooks ();
+init(void)
+{
+    old_malloc = dlsym(RTLD_NEXT, "malloc");
+    if (!old_malloc) {
+	fprintf(stderr, "%s\n", dlerror());
+	exit(1);
+    }
+    old_calloc = dlsym(RTLD_NEXT, "calloc");
+    if (!old_calloc) {
+	fprintf(stderr, "%s\n", dlerror());
+	exit(1);
+    }
+    old_realloc = dlsym(RTLD_NEXT, "realloc");
+    if (!old_realloc) {
+	fprintf(stderr, "%s\n", dlerror());
+	exit(1);
+    }
+    enable_hook = 1;
 }
-
-void (*__volatile __malloc_initialize_hook) (void) = my_init_hook;
-
 
 /* reporting */
 
@@ -313,13 +321,13 @@ merge_similar_entries (struct func_stat_t *func_stats, int num)
 }
 
 __attribute__ ((destructor))
-void
+static void
 malloc_stats (void)
 {
 	unsigned int i, j;
 	struct func_stat_t *sorted_func_stats;
 
-	old_hooks ();
+	enable_hook = 0;
 
 	if (! func_stats_num)
 		return;

@@ -38,7 +38,6 @@
 #include <sys/types.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #if !defined(_SSIZE_T_DEFINED) && !defined(_SSIZE_T_)
