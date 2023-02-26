@@ -2834,7 +2834,9 @@ _cairo_ft_scaled_glyph_init_record_colr_v1_glyph (cairo_ft_scaled_font_t *scaled
     extents->width = DOUBLE_FROM_26_6(face->bbox.xMax) - extents->x_bearing;
     extents->height = DOUBLE_FROM_26_6(face->bbox.yMax) - extents->y_bearing;
 
+#ifdef HAVE_FT_PALETTE_SELECT
     _cairo_ft_scaled_glyph_set_palette (scaled_font, face, &num_palette_entries, &palette);
+#endif
 
     if (!_cairo_matrix_is_scale_0 (&scaled_font->base.scale)) {
 	cairo_pattern_t *foreground_pattern = _cairo_pattern_create_solid (foreground_color);
@@ -2980,7 +2982,9 @@ _cairo_ft_scaled_glyph_init_record_svg_glyph (cairo_ft_scaled_font_t *scaled_fon
     extents->width = DOUBLE_FROM_26_6(face->bbox.xMax) - extents->x_bearing;
     extents->height = DOUBLE_FROM_26_6(face->bbox.yMax) - extents->y_bearing;
 
+#ifdef HAVE_FT_PALETTE_SELECT
     _cairo_ft_scaled_glyph_set_palette (scaled_font, face, &num_palette_entries, &palette);
+#endif
 
     if (!_cairo_matrix_is_scale_0 (&scaled_font->base.scale)) {
 	cairo_pattern_t *foreground_pattern = _cairo_pattern_create_solid (foreground_color);
