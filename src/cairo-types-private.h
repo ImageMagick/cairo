@@ -437,6 +437,17 @@ typedef struct _cairo_unscaled_font {
     cairo_reference_count_t		 ref_count;
     const cairo_unscaled_font_backend_t	*backend;
 } cairo_unscaled_font_t;
+
+typedef enum _cairo_analysis_source {
+    CAIRO_ANALYSIS_SOURCE_PAINT,
+    CAIRO_ANALYSIS_SOURCE_MASK,
+    CAIRO_ANALYSIS_MASK_MASK,
+    CAIRO_ANALYSIS_SOURCE_FILL,
+    CAIRO_ANALYSIS_SOURCE_STROKE,
+    CAIRO_ANALYSIS_SOURCE_SHOW_GLYPHS,
+    CAIRO_ANALYSIS_SOURCE_NONE /* Used when analysis_source is not applicable. */
+} cairo_analysis_source_t;
+
 CAIRO_END_DECLS
 
 #endif /* CAIRO_TYPES_PRIVATE_H */

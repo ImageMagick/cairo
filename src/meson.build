@@ -195,9 +195,6 @@ cairo_feature_sources = {
   'cairo-svg': [
     'cairo-svg-surface.c',
   ],
-  'cairo-xml': [
-    'cairo-xml-surface.c',
-  ],
   'cairo-tee': [
     'cairo-tee-surface.c',
   ],
@@ -218,7 +215,6 @@ cairo_feature_headers = {
   'cairo-gl': ['cairo-gl.h'],
   'cairo-script': ['cairo-script.h'],
   'cairo-tee': ['cairo-tee.h'],
-  'cairo-xml': ['cairo-xml.h'],
   'cairo-vg': ['cairo-vg.h'],
 }
 
@@ -246,9 +242,10 @@ endif
 
 libcairo = library('cairo', cairo_sources,
   dependencies: deps,
-  c_args: cairo_no_warn_c_args + pthread_c_args,
-  cpp_args: cairo_no_warn_c_args + pthread_c_args,
+  c_args: cairo_no_warn_c_args + pthread_c_args + ['-DCAIRO_COMPILATION'],
+  cpp_args: cairo_no_warn_c_args + pthread_c_args + ['-DCAIRO_COMPILATION'],
   link_args: extra_link_args,
+  gnu_symbol_visibility: 'hidden',
   soversion: cairo_version_sonum,
   version: cairo_libversion,
   install: true,
@@ -287,29 +284,4 @@ if shell.found()
       suite: ['fast', 'lint'],
       workdir: meson.current_source_dir())
   endforeach
-
-  env = environment()
-  env.set('CAIRO_HAS_HIDDEN_SYMBOLS', '1')
-
-  cairo_def = custom_target('make-cairo-def',
-                            input : cairo_headers,
-                            output : 'cairo.def',
-                            command : [ shell,
-                                        meson.current_source_dir()/'make-cairo-def.sh',
-                                        '@OUTPUT@',
-                                        cairo_features_file,
-                                        '@INPUT@'
-                                      ])
-
-  test('check-def', shell,
-       args: ['meson-check-def.sh', cairo_def, libcairo ],
-       env: env,
-       workdir: meson.current_source_dir())
-
-  test('check-plt.sh', shell,
-    args: ['check-plt.sh', libcairo ],
-    env: env,
-    suite: ['fast', 'plt'],
-    workdir: meson.current_source_dir())
-
 endif

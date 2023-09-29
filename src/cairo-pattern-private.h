@@ -52,6 +52,7 @@ enum {
     CAIRO_PATTERN_NOTIFY_FILTER = 0x2,
     CAIRO_PATTERN_NOTIFY_EXTEND = 0x4,
     CAIRO_PATTERN_NOTIFY_OPACITY = 0x9,
+    CAIRO_PATTERN_NOTIFY_DITHER = 0x12,
 };
 
 struct _cairo_pattern_observer {
@@ -73,6 +74,7 @@ struct _cairo_pattern {
     cairo_extend_t		extend;
     cairo_bool_t		has_component_alpha;
     cairo_bool_t		is_foreground_marker;
+    cairo_dither_t		dither;
 
     cairo_matrix_t		matrix;
     double			opacity;

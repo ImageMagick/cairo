@@ -1,11 +1,11 @@
 project('cairo', 'c', 'cpp',
-  meson_version: '>= 0.56.0',
+  meson_version: '>= 0.59.0',
   version: run_command(find_program('version.py'), check: true).stdout().strip(),
   default_options: ['warning_level=2'],
 )
 
-# Keep in sync with configure.ac!
 freetype_required_version = '>= 9.7.3'
+freetype_colrv1_required_version = '>= 25.0.19'
 fontconfig_required_version = '>= 2.2.95'
 xrender_required_version = '>= 0.6'
 xcb_required_version = '>= 1.6'
@@ -97,16 +97,6 @@ endif
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
-# Make sure source directory hasn't been configured with autotools
-fs = import('fs')
-if fs.exists('config.h') or fs.exists('src/cairo-features.h') or fs.exists('src/cairo-supported-features.h')
-  error('''
-        The source directory '@0@' appears to contain
-        autotools configuration artifacts. This can cause difficult to
-        debug build problems. Please clean it up and then re-run meson.
-        '''.format(meson.source_root()))
-endif
-
 pkgmod = import('pkgconfig')
 python3 = import('python').find_installation()
 
@@ -184,6 +174,10 @@ deps = [m_dep]
 test_deps = []
 internal_deps = []
 extra_link_args = []
+
+extra_link_args += cc.get_supported_link_arguments([
+  '-Wl,-Bsymbolic-functions',
+])
 
 if host_machine.endian() == 'big'
   conf.set('WORDS_BIGENDIAN', 1)
@@ -263,12 +257,10 @@ if png_dep.found()
   endif
 endif
 
-# Don't build fontconfig as a subproject on Windows unless
-# explicitly requested
+# Disable fontconfig by default on platforms where it is optional
 fontconfig_option = get_option('fontconfig')
-if host_machine.system() == 'windows' and not fontconfig_option.enabled()
-  fontconfig_option = false
-endif
+fontconfig_required = host_machine.system() not in ['windows', 'darwin']
+fontconfig_option = fontconfig_option.disable_auto_if(not fontconfig_required)
 
 fontconfig_dep = dependency('fontconfig',
   required: fontconfig_option,
@@ -301,8 +293,13 @@ endif
 
 ttx = find_program('ttx', required: false)
 
+# Disable FreeType by default on platforms where it is optional
+freetype_option = get_option('freetype')
+freetype_required = host_machine.system() not in ['windows', 'darwin']
+freetype_option = freetype_option.disable_auto_if(not freetype_required)
+
 freetype_dep = dependency('freetype2',
-  required: get_option('freetype'),
+  required: freetype_option,
   version: freetype_required_version,
   fallback: ['freetype2', 'freetype_dep'],
 )
@@ -310,7 +307,7 @@ if freetype_dep.found()
   feature_conf.set('CAIRO_HAS_FT_FONT', 1)
   built_features += [{
     'name': 'cairo-ft',
-    'description': 'Freetype font backend',
+    'description': 'FreeType font backend',
     'deps': [freetype_dep],
     # cairo-ft.h includes fontconfig.h so it needs its cflags
     'compile-deps': [fontconfig_dep.partial_dependency(compile_args: true, includes: true)],
@@ -336,15 +333,15 @@ if freetype_dep.found()
     if not cc.links(files('meson-cc-tests/ft_has_color.c'), dependencies: freetype_dep, name: 'FT has color')
       conf.set('FT_HAS_COLOR', '(0)')
     endif
-    if cc.has_type('FT_SVG_Document', dependencies: freetype_dep, prefix: '#include <freetype/otsvg.h>')
+    if png_dep.found() and \
+        cc.has_type('FT_SVG_Document', dependencies: freetype_dep, prefix: '#include <freetype/otsvg.h>')
       conf.set('HAVE_FT_SVG_DOCUMENT', 1)
       if ttx.found()
         conf.set('CAIRO_CAN_TEST_TTX_FONT', 1)
       endif
     endif
-    # When FT COLRv1 API is no longer experimental we can change this to a
-    # version check for the stable COLRv1 API.
-    if cc.get_define('DEBUG_ENABLE_COLR_V1') != ''
+    if freetype_dep.version().version_compare(freetype_colrv1_required_version) and \
+       cc.has_function('FT_Get_Color_Glyph_Paint', dependencies: freetype_dep)
       conf.set('HAVE_FT_COLR_V1', 1)
     endif
     check_funcs += ft_check_funcs
@@ -523,7 +520,6 @@ if host_machine.system() == 'windows'
   d2d_header = cpp_compiler.has_header('d2d1.h')
   d2d_3_header = cpp_compiler.has_header('d2d1_3.h')
   dwrite_header = cpp_compiler.has_header('dwrite.h')
-  dwrite_3_header = cpp_compiler.has_header('dwrite_3.h')
   wincodec_dep = cpp_compiler.find_library('windowscodecs', required: get_option('dwrite'))
   wincodec_header = cpp_compiler.has_header('wincodec.h')
 
@@ -538,11 +534,6 @@ if host_machine.system() == 'windows'
 
     if cpp_compiler.has_header('d2d1_3.h')
       conf.set('HAVE_D2D1_3_H', 1)
-    endif
-
-    # Exclude MinGW dwrite_3.h because it has a broken definition of DWRITE_COLOR_GLYPH_RUN1.
-    if cpp_compiler.has_header('dwrite_3.h') and cpp_compiler.get_define('__MINGW32__') == ''
-      conf.set('HAVE_DWRITE_3_H', 1)
     endif
 
     add_project_arguments('-DWINVER=_WIN32_WINNT_WIN10', '-D_WIN32_WINNT=_WIN32_WINNT_WIN10', '-DNTDDI_VERSION=NTDDI_WIN10_RS3', language: ['c', 'cpp'])
@@ -593,15 +584,6 @@ endif
 
 if zlib_dep.found()
   conf.set('CAIRO_HAS_INTERPRETER', 1)
-endif
-
-if zlib_dep.found() and png_dep.found() and get_option('xml').enabled()
-  feature_conf.set('CAIRO_HAS_XML_SURFACE', 1)
-  built_features += [{
-    'name': 'cairo-xml',
-    'description': 'XML surface backend',
-    'deps': [zlib_dep],
-  }]
 endif
 
 bfd_dep = cc.find_library('bfd', has_headers: ['bfd.h'], required: get_option('symbol-lookup'))
@@ -839,7 +821,6 @@ summary({
         'Observer': true,
         'Mime': true,
         'Tee': feature_conf.get('CAIRO_HAS_TEE_SURFACE', 0) == 1,
-        'XML': feature_conf.get('CAIRO_HAS_XML_SURFACE', 0) == 1,
         'Xlib': feature_conf.get('CAIRO_HAS_XLIB_SURFACE', 0) == 1,
         'Xlib Xrender': feature_conf.get('CAIRO_HAS_XLIB_XRENDER_SURFACE', 0) == 1,
         'Quartz': feature_conf.get('CAIRO_HAS_QUARTZ_SURFACE', 0) == 1,

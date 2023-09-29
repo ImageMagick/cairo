@@ -184,7 +184,6 @@ cairo_status_to_string (cairo_status_t status)
     }
 }
 
-
 /**
  * cairo_glyph_allocate:
  * @num_glyphs: number of glyphs to allocate
@@ -213,7 +212,6 @@ cairo_glyph_allocate (int num_glyphs)
 
     return _cairo_malloc_ab (num_glyphs, sizeof (cairo_glyph_t));
 }
-slim_hidden_def (cairo_glyph_allocate);
 
 /**
  * cairo_glyph_free:
@@ -233,7 +231,6 @@ cairo_glyph_free (cairo_glyph_t *glyphs)
 {
     free (glyphs);
 }
-slim_hidden_def (cairo_glyph_free);
 
 /**
  * cairo_text_cluster_allocate:
@@ -263,7 +260,6 @@ cairo_text_cluster_allocate (int num_clusters)
 
     return _cairo_malloc_ab (num_clusters, sizeof (cairo_text_cluster_t));
 }
-slim_hidden_def (cairo_text_cluster_allocate);
 
 /**
  * cairo_text_cluster_free:
@@ -283,8 +279,6 @@ cairo_text_cluster_free (cairo_text_cluster_t *clusters)
 {
     free (clusters);
 }
-slim_hidden_def (cairo_text_cluster_free);
-
 
 /* Private stuff */
 

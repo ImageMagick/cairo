@@ -214,6 +214,10 @@ cairo_bool_t
 _cairo_win32_surface_get_extents (void			  *abstract_surface,
 				  cairo_rectangle_int_t   *rectangle);
 
+cairo_surface_t *
+_cairo_compute_glyph_mask (cairo_surface_t *surface,
+			   int quality);
+
 uint32_t
 _cairo_win32_flags_for_dc (HDC dc, cairo_format_t format);
 

@@ -85,21 +85,6 @@ struct mono_scan_converter {
 
 #define I(x) _cairo_fixed_integer_round_down(x)
 
-/* Compute the floored division a/b. Assumes / and % perform symmetric
- * division. */
-inline static struct quorem
-floored_divrem(int a, int b)
-{
-    struct quorem qr;
-    qr.quo = a/b;
-    qr.rem = a%b;
-    if ((a^b)<0 && qr.rem) {
-	qr.quo -= 1;
-	qr.rem += b;
-    }
-    return qr;
-}
-
 /* Compute the floored division (x*a)/b. Assumes / and % perform symmetric
  * division. */
 static struct quorem
@@ -374,15 +359,6 @@ row (struct mono_scan_converter *c, unsigned int mask)
 	    xstart = xend;
 
 	edge = next;
-    }
-}
-
-inline static void dec (struct edge *e, int h)
-{
-    e->height_left -= h;
-    if (e->height_left == 0) {
-	e->prev->next = e->next;
-	e->next->prev = e->prev;
     }
 }
 

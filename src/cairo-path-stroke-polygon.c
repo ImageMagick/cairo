@@ -142,17 +142,6 @@ slope_compare_sgn (double dx1, double dy1, double dx2, double dy2)
     return 0;
 }
 
-static inline int
-range_step (int i, int step, int max)
-{
-    i += step;
-    if (i < 0)
-	i = max - 1;
-    if (i >= max)
-	i = 0;
-    return i;
-}
-
 /*
  * Construct a fan around the midpoint using the vertices from pen between
  * inpt and outpt.

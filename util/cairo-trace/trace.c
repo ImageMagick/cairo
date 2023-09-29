@@ -4882,12 +4882,6 @@ cairo_image_surface_create_from_png_stream (cairo_read_func_t read_func, void *c
 }
 #endif
 
-static const char *
-_content_from_surface (cairo_surface_t *surface)
-{
-    return _content_to_string (DLCALL (cairo_surface_get_content, surface));
-}
-
 #if CAIRO_HAS_TEE_SURFACE
 #include <cairo-tee.h>
 
@@ -4924,6 +4918,12 @@ cairo_tee_surface_create (cairo_surface_t *master)
 
 #if CAIRO_HAS_XLIB_SURFACE
 #include <cairo-xlib.h>
+
+static const char *
+_content_from_surface (cairo_surface_t *surface)
+{
+    return _content_to_string (DLCALL (cairo_surface_get_content, surface));
+}
 
 cairo_surface_t *
 cairo_xlib_surface_create (Display *dpy,

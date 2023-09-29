@@ -163,14 +163,18 @@ to_win32_surface
 <SECTION>
 <FILE>cairo-quartz</FILE>
 CAIRO_HAS_QUARTZ_SURFACE
+CAIRO_HAS_QUARTZ_IMAGE_SURFACE
 cairo_quartz_surface_create
 cairo_quartz_surface_create_for_cg_context
 cairo_quartz_surface_get_cg_context
+cairo_quartz_image_surface_create
+cairo_quartz_image_surface_get_image
 </SECTION>
 
 <SECTION>
 <FILE>cairo-xlib</FILE>
 CAIRO_HAS_XLIB_SURFACE
+CAIRO_HAS_XLIB_XCB_FUNCTIONS
 cairo_xlib_surface_create
 cairo_xlib_surface_create_for_bitmap
 cairo_xlib_surface_set_size
@@ -405,6 +409,9 @@ cairo_pattern_get_type
 cairo_pattern_get_reference_count
 cairo_pattern_set_user_data
 cairo_pattern_get_user_data
+cairo_dither_t
+cairo_pattern_set_dither
+cairo_pattern_get_dither
 </SECTION>
 
 <SECTION>
@@ -431,6 +438,8 @@ cairo_raster_source_finish_func_t
 <FILE>cairo-tag</FILE>
 CAIRO_TAG_DEST
 CAIRO_TAG_LINK
+CAIRO_TAG_CONTENT
+CAIRO_TAG_CONTENT_REF
 cairo_tag_begin
 cairo_tag_end
 </SECTION>
@@ -755,6 +764,7 @@ cairo_get_status_string
 cairo_status_string
 CAIRO_FONT_TYPE_ATSUI
 cairo_atsui_font_face_create_for_atsu_font_id
+CAIRO_HAS_GOBJECT_FUNCTIONS
 </SECTION>
 
 <SECTION>
@@ -769,4 +779,13 @@ cairo_script_set_mode
 cairo_script_surface_create
 cairo_script_surface_create_for_target
 cairo_script_write_comment
+</SECTION>
+
+<SECTION>
+<FILE>cairo-tee</FILE>
+CAIRO_HAS_TEE_SURFACE
+cairo_tee_surface_create
+cairo_tee_surface_add
+cairo_tee_surface_index
+cairo_tee_surface_remove
 </SECTION>

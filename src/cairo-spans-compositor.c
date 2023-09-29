@@ -612,7 +612,7 @@ composite_aligned_boxes (const cairo_spans_compositor_t		*compositor,
 
 	recording_clip = _cairo_clip_from_boxes (boxes);
 	status = _cairo_recording_surface_replay_with_clip (unwrap_source (source),
-							    m, dst, recording_clip, FALSE);
+							    m, dst, recording_clip);
 	_cairo_clip_destroy (recording_clip);
 
 	return status;

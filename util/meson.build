@@ -22,15 +22,6 @@ if conf.get('CAIRO_HAS_TRACE', 0) == 1
   endif
 endif
 
-if (glib_dep.found() and
-    png_dep.found() and
-    host_machine.system() != 'windows' and
-    conf.get('CAIRO_HAS_DLSYM', 0) == 1 and
-    feature_conf.get('CAIRO_HAS_SCRIPT_SURFACE', 0) == 1 and
-    feature_conf.get('CAIRO_HAS_TEE_SURFACE', 0) == 1)
-  subdir('cairo-sphinx')
-endif
-
 if gtk_dep.found()
   cairo_utils += [
     ['show-contour.c', {'deps': [gtk_dep]}],
@@ -39,14 +30,6 @@ if gtk_dep.found()
     ['show-polygon.c', {'deps': [gtk_dep]}],
     ['show-events.c', {'deps': [gtk_dep]}],
     ['font-view.c', {'deps': [gtk_dep]}],
-  ]
-endif
-
-if feature_conf.get('CAIRO_HAS_XML_SURFACE', 0) == 1
-  expat_dep = dependency('expat', fallback: ['expat', 'expat_dep'])
-  cairo_utils += [
-    ['trace-to-xml.c', {'deps': [expat_dep]}],
-    ['xml-to-trace.c', {'deps': [expat_dep]}],
   ]
 endif
 

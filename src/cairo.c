@@ -458,7 +458,6 @@ cairo_create (cairo_surface_t *target)
     return target->backend->create_context (target);
 
 }
-slim_hidden_def (cairo_create);
 
 void
 _cairo_init (cairo_t *cr,
@@ -528,7 +527,6 @@ cairo_destroy (cairo_t *cr)
 
     cr->backend->destroy (cr);
 }
-slim_hidden_def (cairo_destroy);
 
 /**
  * cairo_get_user_data:
@@ -632,7 +630,6 @@ cairo_save (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_save);
 
 /**
  * cairo_restore:
@@ -656,7 +653,6 @@ cairo_restore (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_restore);
 
 /**
  * cairo_push_group:
@@ -707,7 +703,6 @@ cairo_push_group (cairo_t *cr)
 {
     cairo_push_group_with_content (cr, CAIRO_CONTENT_COLOR_ALPHA);
 }
-slim_hidden_def (cairo_push_group);
 
 /**
  * cairo_push_group_with_content:
@@ -740,7 +735,6 @@ cairo_push_group_with_content (cairo_t *cr, cairo_content_t content)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_push_group_with_content);
 
 /**
  * cairo_pop_group:
@@ -777,7 +771,6 @@ cairo_pop_group (cairo_t *cr)
 
     return group_pattern;
 }
-slim_hidden_def(cairo_pop_group);
 
 /**
  * cairo_pop_group_to_source:
@@ -815,7 +808,6 @@ cairo_pop_group_to_source (cairo_t *cr)
     cairo_set_source (cr, group_pattern);
     cairo_pattern_destroy (group_pattern);
 }
-slim_hidden_def (cairo_pop_group_to_source);
 
 /**
  * cairo_set_operator:
@@ -842,7 +834,6 @@ cairo_set_operator (cairo_t *cr, cairo_operator_t op)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_operator);
 
 
 #if 0
@@ -903,7 +894,6 @@ cairo_set_source_rgb (cairo_t *cr, double red, double green, double blue)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source_rgb);
 
 /**
  * cairo_set_source_rgba:
@@ -942,7 +932,6 @@ cairo_set_source_rgba (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source_rgba);
 
 /**
  * cairo_set_source_surface:
@@ -989,7 +978,6 @@ cairo_set_source_surface (cairo_t	  *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source_surface);
 
 /**
  * cairo_set_source:
@@ -1034,7 +1022,6 @@ cairo_set_source (cairo_t *cr, cairo_pattern_t *source)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_source);
 
 /**
  * cairo_get_source:
@@ -1056,7 +1043,6 @@ cairo_get_source (cairo_t *cr)
 
     return cr->backend->get_source (cr);
 }
-slim_hidden_def (cairo_get_source);
 
 /**
  * cairo_set_tolerance:
@@ -1088,7 +1074,6 @@ cairo_set_tolerance (cairo_t *cr, double tolerance)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_tolerance);
 
 /**
  * cairo_set_antialias:
@@ -1166,9 +1151,8 @@ cairo_set_fill_rule (cairo_t *cr, cairo_fill_rule_t fill_rule)
  * cairo_set_line_width() and ignore this note.
  *
  * As with the other stroke parameters, the current line width is
- * examined by cairo_stroke(), cairo_stroke_extents(), and
- * cairo_stroke_to_path(), but does not have any effect during path
- * construction.
+ * examined by cairo_stroke(), and cairo_stroke_extents(), but does not have
+ * any effect during path construction.
  *
  * The default line width value is 2.0.
  *
@@ -1189,7 +1173,6 @@ cairo_set_line_width (cairo_t *cr, double width)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_width);
 
 /**
  * cairo_set_hairline:
@@ -1230,7 +1213,6 @@ cairo_set_hairline (cairo_t *cr, cairo_bool_t set_hairline)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_hairline);
 
 /**
  * cairo_set_line_cap:
@@ -1242,9 +1224,8 @@ slim_hidden_def (cairo_set_hairline);
  * styles are drawn.
  *
  * As with the other stroke parameters, the current line cap style is
- * examined by cairo_stroke(), cairo_stroke_extents(), and
- * cairo_stroke_to_path(), but does not have any effect during path
- * construction.
+ * examined by cairo_stroke(), and cairo_stroke_extents(), but does not have
+ * any effect during path construction.
  *
  * The default line cap style is %CAIRO_LINE_CAP_BUTT.
  *
@@ -1262,7 +1243,6 @@ cairo_set_line_cap (cairo_t *cr, cairo_line_cap_t line_cap)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_cap);
 
 /**
  * cairo_set_line_join:
@@ -1274,9 +1254,8 @@ slim_hidden_def (cairo_set_line_cap);
  * styles are drawn.
  *
  * As with the other stroke parameters, the current line join style is
- * examined by cairo_stroke(), cairo_stroke_extents(), and
- * cairo_stroke_to_path(), but does not have any effect during path
- * construction.
+ * examined by cairo_stroke(), and cairo_stroke_extents(), but does not have
+ * any effect during path construction.
  *
  * The default line join style is %CAIRO_LINE_JOIN_MITER.
  *
@@ -1294,7 +1273,6 @@ cairo_set_line_join (cairo_t *cr, cairo_line_join_t line_join)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_line_join);
 
 /**
  * cairo_set_dash:
@@ -1345,7 +1323,6 @@ cairo_set_dash (cairo_t	     *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_dash);
 
 /**
  * cairo_get_dash_count:
@@ -1411,9 +1388,8 @@ cairo_get_dash (cairo_t *cr,
  * converted to a bevel.
  *
  * As with the other stroke parameters, the current line miter limit is
- * examined by cairo_stroke(), cairo_stroke_extents(), and
- * cairo_stroke_to_path(), but does not have any effect during path
- * construction.
+ * examined by cairo_stroke(), and cairo_stroke_extents(), but does not have
+ * any effect during path construction.
  *
  * The default miter limit value is 10.0, which will convert joins
  * with interior angles less than 11 degrees to bevels instead of
@@ -1465,7 +1441,6 @@ cairo_translate (cairo_t *cr, double tx, double ty)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_translate);
 
 /**
  * cairo_scale:
@@ -1492,7 +1467,6 @@ cairo_scale (cairo_t *cr, double sx, double sy)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_scale);
 
 /**
  * cairo_rotate:
@@ -1520,7 +1494,6 @@ cairo_rotate (cairo_t *cr, double angle)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_rotate);
 
 /**
  * cairo_transform:
@@ -1546,7 +1519,6 @@ cairo_transform (cairo_t	      *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_transform);
 
 /**
  * cairo_set_matrix:
@@ -1571,7 +1543,6 @@ cairo_set_matrix (cairo_t	       *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_matrix);
 
 /**
  * cairo_identity_matrix:
@@ -1596,7 +1567,6 @@ cairo_identity_matrix (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_identity_matrix);
 
 /**
  * cairo_user_to_device:
@@ -1618,7 +1588,6 @@ cairo_user_to_device (cairo_t *cr, double *x, double *y)
 
     cr->backend->user_to_device (cr, x, y);
 }
-slim_hidden_def (cairo_user_to_device);
 
 /**
  * cairo_user_to_device_distance:
@@ -1641,7 +1610,6 @@ cairo_user_to_device_distance (cairo_t *cr, double *dx, double *dy)
 
     cr->backend->user_to_device_distance (cr, dx, dy);
 }
-slim_hidden_def (cairo_user_to_device_distance);
 
 /**
  * cairo_device_to_user:
@@ -1663,7 +1631,6 @@ cairo_device_to_user (cairo_t *cr, double *x, double *y)
 
     cr->backend->device_to_user (cr, x, y);
 }
-slim_hidden_def (cairo_device_to_user);
 
 /**
  * cairo_device_to_user_distance:
@@ -1708,7 +1675,6 @@ cairo_new_path (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_new_path);
 
 /**
  * cairo_new_sub_path:
@@ -1764,8 +1730,6 @@ cairo_move_to (cairo_t *cr, double x, double y)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_move_to);
-
 
 /**
  * cairo_line_to:
@@ -1794,7 +1758,6 @@ cairo_line_to (cairo_t *cr, double x, double y)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_line_to);
 
 /**
  * cairo_curve_to:
@@ -1835,7 +1798,6 @@ cairo_curve_to (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_curve_to);
 
 /**
  * cairo_arc:
@@ -1911,7 +1873,6 @@ cairo_arc (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_arc);
 
 /**
  * cairo_arc_negative:
@@ -1957,7 +1918,6 @@ cairo_arc_negative (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_arc_negative);
 
 /* XXX: NYI
 void
@@ -2056,7 +2016,6 @@ cairo_rel_line_to (cairo_t *cr, double dx, double dy)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_rel_line_to);
 
 /**
  * cairo_rel_curve_to:
@@ -2140,7 +2099,6 @@ cairo_rectangle (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_rectangle);
 
 #if 0
 /* XXX: NYI */
@@ -2200,7 +2158,6 @@ cairo_close_path (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_close_path);
 
 /**
  * cairo_path_extents:
@@ -2274,7 +2231,6 @@ cairo_paint (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_paint);
 
 /**
  * cairo_paint_with_alpha:
@@ -2301,7 +2257,6 @@ cairo_paint_with_alpha (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_paint_with_alpha);
 
 /**
  * cairo_mask:
@@ -2338,7 +2293,6 @@ cairo_mask (cairo_t         *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_mask);
 
 /**
  * cairo_mask_surface:
@@ -2422,7 +2376,6 @@ cairo_stroke (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_stroke);
 
 /**
  * cairo_stroke_preserve:
@@ -2451,7 +2404,6 @@ cairo_stroke_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_stroke_preserve);
 
 /**
  * cairo_fill:
@@ -2477,7 +2429,6 @@ cairo_fill (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_fill);
 
 /**
  * cairo_fill_preserve:
@@ -2504,7 +2455,6 @@ cairo_fill_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_fill_preserve);
 
 /**
  * cairo_copy_page:
@@ -2769,7 +2719,6 @@ cairo_clip (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_clip);
 
 /**
  * cairo_clip_preserve:
@@ -2807,7 +2756,6 @@ cairo_clip_preserve (cairo_t *cr)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def(cairo_clip_preserve);
 
 /**
  * cairo_reset_clip:
@@ -2876,7 +2824,6 @@ cairo_clip_extents (cairo_t *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_clip_extents);
 
 /**
  * cairo_in_clip:
@@ -2941,7 +2888,7 @@ cairo_copy_clip_rectangle_list (cairo_t *cr)
  * CAIRO_TAG_DEST:
  *
  * Create a destination for a hyperlink. Destination tag attributes
- * are detailed at [Destinations][dests].
+ * are detailed at [Destinations][dest].
  *
  * Since: 1.16
  **/
@@ -2950,9 +2897,25 @@ cairo_copy_clip_rectangle_list (cairo_t *cr)
  * CAIRO_TAG_LINK:
  *
  * Create hyperlink. Link tag attributes are detailed at
- * [Links][links].
+ * [Links][link].
  *
  * Since: 1.16
+ **/
+
+/**
+ * CAIRO_TAG_CONTENT:
+ *
+ * Create a content tag.
+ *
+ * Since: 1.18
+ **/
+
+/**
+ * CAIRO_TAG_CONTENT_REF:
+ *
+ * Create a content reference tag.
+ *
+ * Since: 1.18
  **/
 
 /**
@@ -3222,7 +3185,6 @@ cairo_set_font_size (cairo_t *cr, double size)
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_size);
 
 /**
  * cairo_set_font_matrix:
@@ -3252,7 +3214,6 @@ cairo_set_font_matrix (cairo_t		    *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_matrix);
 
 /**
  * cairo_get_font_matrix:
@@ -3307,7 +3268,6 @@ cairo_set_font_options (cairo_t                    *cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_set_font_options);
 
 /**
  * cairo_get_font_options:
@@ -3360,7 +3320,7 @@ cairo_set_scaled_font (cairo_t                   *cr,
     if (unlikely (cr->status))
 	return;
 
-    if ((scaled_font == NULL)) {
+    if (scaled_font == NULL) {
 	_cairo_set_error (cr, _cairo_error (CAIRO_STATUS_NULL_POINTER));
 	return;
     }
@@ -3404,7 +3364,6 @@ cairo_get_scaled_font (cairo_t *cr)
 
     return cr->backend->get_scaled_font (cr);
 }
-slim_hidden_def (cairo_get_scaled_font);
 
 /**
  * cairo_text_extents:
@@ -3942,7 +3901,7 @@ cairo_get_operator (cairo_t *cr)
 }
 
 #if 0
-/**
+/*
  * cairo_get_opacity:
  * @cr: a cairo context
  *
@@ -3980,7 +3939,6 @@ cairo_get_tolerance (cairo_t *cr)
 
     return cr->backend->get_tolerance (cr);
 }
-slim_hidden_def (cairo_get_tolerance);
 
 /**
  * cairo_get_antialias:
@@ -4021,7 +3979,6 @@ cairo_has_current_point (cairo_t *cr)
 
     return cr->backend->has_current_point (cr);
 }
-slim_hidden_def (cairo_has_current_point);
 
 /**
  * cairo_get_current_point:
@@ -4044,7 +4001,7 @@ slim_hidden_def (cairo_has_current_point);
  * cairo_move_to(), cairo_line_to(), cairo_curve_to(),
  * cairo_rel_move_to(), cairo_rel_line_to(), cairo_rel_curve_to(),
  * cairo_arc(), cairo_arc_negative(), cairo_rectangle(),
- * cairo_text_path(), cairo_glyph_path(), cairo_stroke_to_path().
+ * cairo_text_path(), cairo_glyph_path().
  *
  * Some functions use and alter the current point but do not
  * otherwise change current path:
@@ -4072,7 +4029,6 @@ cairo_get_current_point (cairo_t *cr, double *x_ret, double *y_ret)
     if (y_ret)
 	*y_ret = y;
 }
-slim_hidden_def(cairo_get_current_point);
 
 /**
  * cairo_get_fill_rule:
@@ -4092,7 +4048,6 @@ cairo_get_fill_rule (cairo_t *cr)
 
     return cr->backend->get_fill_rule (cr);
 }
-slim_hidden_def (cairo_set_fill_rule);
 
 /**
  * cairo_get_line_width:
@@ -4115,7 +4070,6 @@ cairo_get_line_width (cairo_t *cr)
 
     return cr->backend->get_line_width (cr);
 }
-slim_hidden_def (cairo_get_line_width);
 
 /**
  * cairo_get_hairline:
@@ -4135,7 +4089,6 @@ cairo_get_hairline (cairo_t *cr)
 
     return cr->backend->get_hairline (cr);
 }
-slim_hidden_def (cairo_get_hairline);
 
 /**
  * cairo_get_line_cap:
@@ -4193,7 +4146,6 @@ cairo_get_miter_limit (cairo_t *cr)
 
     return cr->backend->get_miter_limit (cr);
 }
-slim_hidden_def (cairo_set_miter_limit);
 
 /**
  * cairo_get_matrix:
@@ -4214,7 +4166,6 @@ cairo_get_matrix (cairo_t *cr, cairo_matrix_t *matrix)
 
     cr->backend->get_matrix (cr, matrix);
 }
-slim_hidden_def (cairo_get_matrix);
 
 /**
  * cairo_get_target:
@@ -4242,7 +4193,6 @@ cairo_get_target (cairo_t *cr)
 
     return cr->backend->get_original_target (cr);
 }
-slim_hidden_def (cairo_get_target);
 
 /**
  * cairo_get_group_target:
@@ -4309,7 +4259,6 @@ cairo_copy_path (cairo_t *cr)
 
     return cr->backend->copy_path (cr);
 }
-slim_hidden_def (cairo_copy_path);
 
 /**
  * cairo_copy_path_flat:
@@ -4404,7 +4353,6 @@ cairo_append_path (cairo_t		*cr,
     if (unlikely (status))
 	_cairo_set_error (cr, status);
 }
-slim_hidden_def (cairo_append_path);
 
 /**
  * cairo_status:
@@ -4421,4 +4369,3 @@ cairo_status (cairo_t *cr)
 {
     return cr->status;
 }
-slim_hidden_def (cairo_status);

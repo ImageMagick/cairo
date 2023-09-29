@@ -212,6 +212,9 @@ private:
 
 
 RefPtr<IDWriteFactory> DWriteFactory::mFactoryInstance;
+RefPtr<IDWriteFactory1> DWriteFactory::mFactoryInstance1;
+RefPtr<IDWriteFactory2> DWriteFactory::mFactoryInstance2;
+RefPtr<IDWriteFactory3> DWriteFactory::mFactoryInstance3;
 RefPtr<IDWriteFactory4> DWriteFactory::mFactoryInstance4;
 
 RefPtr<IWICImagingFactory> WICImagingFactory::mFactoryInstance;
@@ -220,6 +223,107 @@ RefPtr<IDWriteRenderingParams> DWriteFactory::mDefaultRenderingParams;
 
 RefPtr<ID2D1Factory> D2DFactory::mFactoryInstance;
 RefPtr<ID2D1DCRenderTarget> D2DFactory::mRenderTarget;
+
+static int
+_quality_from_antialias_mode(cairo_antialias_t antialias)
+{
+    switch (antialias) {
+    case CAIRO_ANTIALIAS_NONE:
+	return NONANTIALIASED_QUALITY;
+    case CAIRO_ANTIALIAS_FAST:
+    case CAIRO_ANTIALIAS_GRAY:
+	return ANTIALIASED_QUALITY;
+    default:
+	break;
+    }
+    return CLEARTYPE_QUALITY;    
+}
+
+static RefPtr<IDWriteRenderingParams>
+_create_rendering_params(IDWriteRenderingParams     *params,
+			 const cairo_font_options_t *options,
+			 cairo_antialias_t           antialias)
+{
+    if (!params)
+	params = DWriteFactory::DefaultRenderingParams();
+    FLOAT gamma = params->GetGamma();
+    FLOAT enhanced_contrast = params->GetEnhancedContrast();
+    FLOAT clear_type_level = params->GetClearTypeLevel();
+    DWRITE_PIXEL_GEOMETRY pixel_geometry = params->GetPixelGeometry();
+    DWRITE_RENDERING_MODE rendering_mode = params->GetRenderingMode();
+
+    cairo_bool_t modified = FALSE;
+    switch (antialias) {
+    case CAIRO_ANTIALIAS_NONE:
+	if (rendering_mode != DWRITE_RENDERING_MODE_ALIASED) {
+	    rendering_mode = DWRITE_RENDERING_MODE_ALIASED;
+	    modified = TRUE;
+	}
+	break;
+    case CAIRO_ANTIALIAS_FAST:
+    case CAIRO_ANTIALIAS_GRAY:
+	if (clear_type_level) {
+	    clear_type_level = 0;
+	    modified = TRUE;
+	}
+	break;
+    default:
+	break;
+    }
+    auto subpixel_order = cairo_font_options_get_subpixel_order (options);
+    switch (subpixel_order) {
+    case CAIRO_SUBPIXEL_ORDER_RGB:
+	if (pixel_geometry != DWRITE_PIXEL_GEOMETRY_RGB) {
+	    pixel_geometry = DWRITE_PIXEL_GEOMETRY_RGB;
+	    modified = TRUE;
+	}
+	break;
+    case CAIRO_SUBPIXEL_ORDER_BGR:
+	if (pixel_geometry != DWRITE_PIXEL_GEOMETRY_BGR) {
+	    pixel_geometry = DWRITE_PIXEL_GEOMETRY_BGR;
+	    modified = TRUE;
+	}
+	break;
+    default:
+	break;
+    }	
+    if (!modified)
+	return params;
+
+    HRESULT hr;
+    RefPtr<IDWriteRenderingParams1> params1;
+    hr = params->QueryInterface(&params1);
+    if (FAILED(hr)) {
+	RefPtr<IDWriteRenderingParams> ret;
+	DWriteFactory::Instance()->CreateCustomRenderingParams(gamma, enhanced_contrast, clear_type_level, pixel_geometry, rendering_mode, &ret);
+	return ret;
+    }
+
+    FLOAT grayscaleEnhancedContrast = params1->GetGrayscaleEnhancedContrast();
+    RefPtr<IDWriteRenderingParams2> params2;
+    hr = params->QueryInterface(&params2);
+    if (FAILED(hr)) {
+	RefPtr<IDWriteRenderingParams1> ret;
+	DWriteFactory::Instance1()->CreateCustomRenderingParams(gamma, enhanced_contrast, grayscaleEnhancedContrast, clear_type_level, pixel_geometry, rendering_mode, &ret);
+	return ret;
+    }    
+
+    DWRITE_GRID_FIT_MODE gridFitMode = params2->GetGridFitMode();
+    RefPtr<IDWriteRenderingParams3> params3;
+    hr = params->QueryInterface(&params3);
+    if (FAILED(hr)) {
+	RefPtr<IDWriteRenderingParams2> ret;
+	DWriteFactory::Instance2()->CreateCustomRenderingParams(gamma, enhanced_contrast, grayscaleEnhancedContrast, clear_type_level, pixel_geometry, rendering_mode, gridFitMode, &ret);
+	return ret;
+    }    
+    
+    DWRITE_RENDERING_MODE1 rendering_mode1 = params3->GetRenderingMode1();
+    if (antialias == CAIRO_ANTIALIAS_NONE)
+	rendering_mode1 = DWRITE_RENDERING_MODE1_ALIASED;
+    RefPtr<IDWriteRenderingParams3> ret;
+    DWriteFactory::Instance3()->CreateCustomRenderingParams(gamma, enhanced_contrast, grayscaleEnhancedContrast, clear_type_level, pixel_geometry, rendering_mode1, gridFitMode, &ret);
+    return ret;
+}
 
 /* Functions #cairo_font_face_backend_t */
 static cairo_status_t
@@ -557,13 +661,6 @@ _cairo_dwrite_font_face_scaled_font_create (void			*abstract_face,
     dwrite_font->mat_inverse = dwrite_font->mat;
     cairo_matrix_invert (&dwrite_font->mat_inverse);
 
-    dwrite_font->rendering_params = NULL;
-    if (font_face->rendering_params) {
-	dwrite_font->rendering_params = font_face->rendering_params;
-	dwrite_font->rendering_params->AddRef();
-    }
-    dwrite_font->measuring_mode = font_face->measuring_mode;
-
     cairo_font_extents_t extents;
 
     DWRITE_FONT_METRICS metrics;
@@ -611,6 +708,9 @@ _cairo_dwrite_font_face_scaled_font_create (void			*abstract_face,
     } else {
 	dwrite_font->antialias_mode = options->antialias;
     }
+
+    dwrite_font->rendering_params = _create_rendering_params(font_face->rendering_params, options, dwrite_font->antialias_mode).forget().drop();
+    dwrite_font->measuring_mode = font_face->measuring_mode;
 
     return _cairo_scaled_font_set_metrics (*font, &extents);
 }
@@ -716,10 +816,15 @@ _cairo_dwrite_scaled_font_init_glyph_metrics(cairo_dwrite_scaled_font_t *scaled_
     // We pad the extents here because GetDesignGlyphMetrics returns "ideal" metrics
     // for the glyph outline, without accounting for hinting/gridfitting/antialiasing,
     // and therefore it does not always cover all pixels that will actually be touched.
-    if (scaled_font->base.options.antialias != CAIRO_ANTIALIAS_NONE &&
-	extents.width > 0 && extents.height > 0) {
-	extents.width += scaled_font->mat_inverse.xx * 2;
-	extents.x_bearing -= scaled_font->mat_inverse.xx;
+    if (extents.width > 0 && extents.height > 0) {
+	double x = 1, y = 1;
+	cairo_matrix_transform_distance (&scaled_font->mat_inverse, &x, &y);
+	x = fabs(x);
+	y = fabs(y);
+	extents.width += x * 2;
+	extents.x_bearing -= x;
+	extents.height += y * 2;
+	extents.y_bearing -= y;
     }
 
     _cairo_scaled_glyph_set_metrics (scaled_glyph,
@@ -736,8 +841,9 @@ _cairo_dwrite_scaled_font_init_glyph_metrics(cairo_dwrite_scaled_font_t *scaled_
 class GeometryRecorder : public IDWriteGeometrySink
 {
 public:
-    GeometryRecorder(cairo_path_fixed_t *aCairoPath)
-	: mCairoPath(aCairoPath) {}
+    GeometryRecorder(cairo_path_fixed_t *aCairoPath, const cairo_matrix_t &matrix)
+	: mCairoPath(aCairoPath)
+	, mMatrix(matrix) {}
 
     // IUnknown interface
     IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject)
@@ -779,10 +885,14 @@ public:
 	D2D1_POINT_2F startPoint,
 	D2D1_FIGURE_BEGIN figureBegin)
     {
-	mStartPoint = startPoint;
+	double x = startPoint.x;
+	double y = startPoint.y;
+	cairo_matrix_transform_point(&mMatrix, &x, &y);
+	mStartPointX = _cairo_fixed_from_double(x);
+	mStartPointY = _cairo_fixed_from_double(y);
 	cairo_status_t status = _cairo_path_fixed_move_to(mCairoPath,
-							  _cairo_fixed_from_double(startPoint.x),
-							  _cairo_fixed_from_double(startPoint.y));
+							  mStartPointX,
+							  mStartPointY);
 	(void)status; /* squelch warning */
     }
 
@@ -791,8 +901,8 @@ public:
     {
 	if (figureEnd == D2D1_FIGURE_END_CLOSED) {
 	    cairo_status_t status = _cairo_path_fixed_line_to(mCairoPath,
-							      _cairo_fixed_from_double(mStartPoint.x),
-							      _cairo_fixed_from_double(mStartPoint.y));
+							      mStartPointX,
+							      mStartPointY);
 	    (void)status; /* squelch warning */
 	}
     }
@@ -802,13 +912,22 @@ public:
 	UINT beziersCount)
     {
 	for (unsigned int i = 0; i < beziersCount; i++) {
+	    double x1 = beziers[i].point1.x;
+	    double y1 = beziers[i].point1.y;
+	    double x2 = beziers[i].point2.x;
+	    double y2 = beziers[i].point2.y;
+	    double x3 = beziers[i].point3.x;
+	    double y3 = beziers[i].point3.y;
+	    cairo_matrix_transform_point(&mMatrix, &x1, &y1);
+	    cairo_matrix_transform_point(&mMatrix, &x2, &y2);
+	    cairo_matrix_transform_point(&mMatrix, &x3, &y3);
 	    cairo_status_t status = _cairo_path_fixed_curve_to(mCairoPath,
-							       _cairo_fixed_from_double(beziers[i].point1.x),
-							       _cairo_fixed_from_double(beziers[i].point1.y),
-							       _cairo_fixed_from_double(beziers[i].point2.x),
-							       _cairo_fixed_from_double(beziers[i].point2.y),
-							       _cairo_fixed_from_double(beziers[i].point3.x),
-							       _cairo_fixed_from_double(beziers[i].point3.y));
+							       _cairo_fixed_from_double(x1),
+							       _cairo_fixed_from_double(y1),
+							       _cairo_fixed_from_double(x2),
+							       _cairo_fixed_from_double(y2),
+							       _cairo_fixed_from_double(x3),
+							       _cairo_fixed_from_double(y3));
 	    (void)status; /* squelch warning */
 	}
     }
@@ -818,16 +937,21 @@ public:
 	UINT pointsCount)
     {
 	for (unsigned int i = 0; i < pointsCount; i++) {
+	    double x = points[i].x;
+	    double y = points[i].y;
+	    cairo_matrix_transform_point(&mMatrix, &x, &y);
 	    cairo_status_t status = _cairo_path_fixed_line_to(mCairoPath,
-							      _cairo_fixed_from_double(points[i].x),
-							      _cairo_fixed_from_double(points[i].y));
+							      _cairo_fixed_from_double(x),
+							      _cairo_fixed_from_double(y));
 	    (void)status; /* squelch warning */
 	}
     }
 
 private:
     cairo_path_fixed_t *mCairoPath;
-    D2D1_POINT_2F mStartPoint;
+    const cairo_matrix_t &mMatrix;
+    cairo_fixed_t mStartPointX;
+    cairo_fixed_t mStartPointY;
 };
 
 static cairo_int_status_t
@@ -837,7 +961,7 @@ _cairo_dwrite_scaled_font_init_glyph_path(cairo_dwrite_scaled_font_t *scaled_fon
     cairo_int_status_t status;
     cairo_path_fixed_t *path;
     path = _cairo_path_fixed_create();
-    GeometryRecorder recorder(path);
+    GeometryRecorder recorder(path, scaled_font->base.scale);
 
     DWRITE_GLYPH_OFFSET offset;
     offset.advanceOffset = 0;
@@ -846,12 +970,7 @@ _cairo_dwrite_scaled_font_init_glyph_path(cairo_dwrite_scaled_font_t *scaled_fon
     FLOAT advance = 0.0;
     cairo_dwrite_font_face_t *dwriteff = (cairo_dwrite_font_face_t*)scaled_font->base.font_face;
 
-    /* GetGlyphRunOutline seems to ignore hinting so just use the em size to get the outline
-     * to avoid rounding errors when converting to cairo_path_fixed_t.
-     */
-    DWRITE_FONT_METRICS metrics;
-    dwriteff->dwriteface->GetMetrics(&metrics);
-    HRESULT hr = dwriteff->dwriteface->GetGlyphRunOutline(metrics.designUnitsPerEm,
+    HRESULT hr = dwriteff->dwriteface->GetGlyphRunOutline(1,
 							  &glyphId,
 							  &advance,
 							  &offset,
@@ -863,12 +982,6 @@ _cairo_dwrite_scaled_font_init_glyph_path(cairo_dwrite_scaled_font_t *scaled_fon
 	return _cairo_dwrite_error (hr, "GetGlyphRunOutline failed");
 
     status = (cairo_int_status_t)_cairo_path_fixed_close_path(path);
-
-    /* Now scale the em size down to 1.0 and apply the font matrix and font ctm. */
-    cairo_matrix_t mat = scaled_font->base.ctm;
-    cairo_matrix_multiply(&mat, &scaled_font->base.font_matrix, &mat);
-    cairo_matrix_scale (&mat, 1.0/metrics.designUnitsPerEm, 1.0/metrics.designUnitsPerEm);
-    _cairo_path_fixed_transform(path, &mat);
 
     _cairo_scaled_glyph_set_path (scaled_glyph,
 				  &scaled_font->base,
@@ -883,7 +996,6 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 {
     int width, height;
     double x1, y1, x2, y2;
-    cairo_glyph_t glyph;
     cairo_bool_t uses_foreground_color = FALSE;
 
     cairo_dwrite_font_face_t *dwrite_font_face = (cairo_dwrite_font_face_t *)scaled_font->base.font_face;
@@ -900,22 +1012,18 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
     width = (int)(x2 - x1);
     height = (int)(y2 - y1);
 
-    glyph.index = _cairo_scaled_glyph_index (scaled_glyph);
-    glyph.x = x1;
-    glyph.y = y1;
-
     DWRITE_GLYPH_RUN run;
     FLOAT advance = 0;
-    UINT16 index = (UINT16)glyph.index;
+    UINT16 index = (UINT16)_cairo_scaled_glyph_index (scaled_glyph);
     DWRITE_GLYPH_OFFSET offset;
-    double x = -glyph.x;
-    double y = -glyph.y;
+    double x = -x1 + .25 * _cairo_scaled_glyph_xphase (scaled_glyph);
+    double y = -y1 + .25 * _cairo_scaled_glyph_yphase (scaled_glyph);
     DWRITE_MATRIX matrix;
     D2D1_POINT_2F origin = {0, 0};
     RefPtr<IDWriteColorGlyphRunEnumerator1> run_enumerator;
     HRESULT hr;
 
-    /**
+    /*
      * We transform by the inverse transformation here. This will put our glyph
      * locations in the space in which we draw. Which is later transformed by
      * the transformation matrix that we use. This will transform the
@@ -924,7 +1032,7 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
      */
     cairo_matrix_transform_point(&scaled_font->mat_inverse, &x, &y);
     offset.advanceOffset = (FLOAT)x;
-    /** Y-axis is inverted */
+    /* Y-axis is inverted */
     offset.ascenderOffset = -(FLOAT)y;
 
     run.fontFace = dwrite_font_face->dwriteface;
@@ -1036,8 +1144,8 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 	if (FAILED(hr) || !have_run)
 	    break;
 
-	DWRITE_COLOR_GLYPH_RUN1 const* color_run;
-	hr = run_enumerator->GetCurrentRun(&color_run);
+	DWRITE_COLOR_GLYPH_RUN1_WORKAROUND const* color_run;
+	hr = run_enumerator->GetCurrentRun(reinterpret_cast<const DWRITE_COLOR_GLYPH_RUN1**>(&color_run));
 	if (FAILED(hr))
 	    return _cairo_dwrite_error (hr, "GetCurrentRun failed");
 
@@ -1118,48 +1226,11 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
     return CAIRO_INT_STATUS_SUCCESS;
 }
 
-/* Helper function adapted from _compute_mask in cairo-win32-font.c */
-
-/* Compute an alpha-mask from a monochrome RGB24 image
- */
-static cairo_surface_t *
-_compute_a8_mask (cairo_surface_t *surface)
-{
-    cairo_image_surface_t *glyph;
-    cairo_image_surface_t *mask;
-    int i, j;
-
-    glyph = (cairo_image_surface_t *)cairo_surface_map_to_image (surface, NULL);
-    if (unlikely (glyph->base.status))
-        return &glyph->base;
-
-    /* No quality param, just use the non-ClearType path */
-
-    /* Compute an alpha-mask by using the green channel of a (presumed monochrome)
-     * RGB24 image.
-     */
-    mask = (cairo_image_surface_t *)
-        cairo_image_surface_create (CAIRO_FORMAT_A8, glyph->width, glyph->height);
-    if (likely (mask->base.status == CAIRO_STATUS_SUCCESS)) {
-        for (i = 0; i < glyph->height; i++) {
-            uint32_t *p = (uint32_t *) (glyph->data + i * glyph->stride);
-            uint8_t *q = (uint8_t *) (mask->data + i * mask->stride);
-
-            for (j = 0; j < glyph->width; j++)
-                *q++ = 255 - ((*p++ & 0x0000ff00) >> 8);
-        }
-    }
-
-    cairo_surface_unmap_image (surface, &glyph->base);
-    return &mask->base;
-}
-
 static cairo_int_status_t
 _cairo_dwrite_scaled_font_init_glyph_surface(cairo_dwrite_scaled_font_t *scaled_font,
 					     cairo_scaled_glyph_t	*scaled_glyph)
 {
     cairo_int_status_t status;
-    cairo_glyph_t glyph;
     cairo_win32_surface_t *surface;
     cairo_t *cr;
     cairo_surface_t *image;
@@ -1173,16 +1244,12 @@ _cairo_dwrite_scaled_font_init_glyph_surface(cairo_dwrite_scaled_font_t *scaled_
     width = (int)(x2 - x1);
     height = (int)(y2 - y1);
 
-    glyph.index = _cairo_scaled_glyph_index (scaled_glyph);
-    glyph.x = -x1;
-    glyph.y = -y1;
-
     DWRITE_GLYPH_RUN run;
     FLOAT advance = 0;
-    UINT16 index = (UINT16)glyph.index;
+    UINT16 index = (UINT16)_cairo_scaled_glyph_index (scaled_glyph);
     DWRITE_GLYPH_OFFSET offset;
-    double x = glyph.x;
-    double y = glyph.y;
+    double x = -x1 + .25 * _cairo_scaled_glyph_xphase (scaled_glyph);
+    double y = -y1 + .25 * _cairo_scaled_glyph_yphase (scaled_glyph);
     RECT area;
     DWRITE_MATRIX matrix;
 
@@ -1197,7 +1264,7 @@ _cairo_dwrite_scaled_font_init_glyph_surface(cairo_dwrite_scaled_font_t *scaled_
     if (status)
 	goto FAIL;
 
-    /**
+    /*
      * We transform by the inverse transformation here. This will put our glyph
      * locations in the space in which we draw. Which is later transformed by
      * the transformation matrix that we use. This will transform the
@@ -1206,7 +1273,7 @@ _cairo_dwrite_scaled_font_init_glyph_surface(cairo_dwrite_scaled_font_t *scaled_
      */
     cairo_matrix_transform_point(&scaled_font->mat_inverse, &x, &y);
     offset.advanceOffset = (FLOAT)x;
-    /** Y-axis is inverted */
+    /* Y-axis is inverted */
     offset.ascenderOffset = -(FLOAT)y;
 
     area.top = 0;
@@ -1232,7 +1299,7 @@ _cairo_dwrite_scaled_font_init_glyph_surface(cairo_dwrite_scaled_font_t *scaled_
 
     GdiFlush();
 
-    image = _compute_a8_mask (&surface->base);
+    image = _cairo_compute_glyph_mask (&surface->base, _quality_from_antialias_mode(scaled_font->antialias_mode));
     status = (cairo_int_status_t)image->status;
     if (status)
 	goto FAIL;
@@ -1486,6 +1553,9 @@ cairo_dwrite_font_face_get_rendering_params (cairo_font_face_t *font_face)
  * @params: The #IDWriteRenderingParams object
  *
  * Sets the #IDWriteRenderingParams object to @font_face.
+ * This #IDWriteRenderingParams is used to render glyphs if default values of font options are used.
+ * If non-defalut values of font options are specified when creating a #cairo_scaled_font_t,
+ * cairo creates a new #IDWriteRenderingParams object for the #cairo_scaled_font_t object by overwriting the corresponding parameters.
  *
  * Since: 1.18
  **/
@@ -1559,13 +1629,7 @@ _dwrite_draw_glyphs_to_gdi_surface_gdi(cairo_win32_surface_t *surface,
 	}
     }
 
-    IDWriteRenderingParams *params;
-    if (scaled_font->rendering_params)
-	params = scaled_font->rendering_params;
-    else
-	params = DWriteFactory::DefaultRenderingParams();
-
-    /**
+    /*
      * We set the number of pixels per DIP to 1.0. This is because we always want
      * to draw in device pixels, and not device independent pixels. On high DPI
      * systems this value will be higher than 1.0 and automatically upscale
@@ -1573,8 +1637,15 @@ _dwrite_draw_glyphs_to_gdi_surface_gdi(cairo_win32_surface_t *surface,
      */
     rt->SetPixelsPerDip(1.0);
 
+    float x = 0, y = 0;
     if (transform) {
-	rt->SetCurrentTransform(transform);
+	DWRITE_MATRIX matrix = *transform;
+	matrix.dx -= area.left;
+	matrix.dy -= area.top;
+	rt->SetCurrentTransform(&matrix);
+    } else {
+	x = (float) -area.left;
+	y = (float) -area.top;
     }
     BitBlt(rt->GetMemoryDC(),
 	   0, 0,
@@ -1582,7 +1653,7 @@ _dwrite_draw_glyphs_to_gdi_surface_gdi(cairo_win32_surface_t *surface,
 	   surface->dc,
 	   area.left, area.top,
 	   SRCCOPY | NOMIRRORBITMAP);
-    rt->DrawGlyphRun(0, 0, scaled_font->measuring_mode, run, params, color);
+    rt->DrawGlyphRun(x, y, scaled_font->measuring_mode, run, scaled_font->rendering_params, color);
     BitBlt(surface->dc,
 	   area.left, area.top,
 	   area.right - area.left, area.bottom - area.top,
@@ -1618,6 +1689,7 @@ _dwrite_draw_glyphs_to_gdi_surface_d2d(cairo_win32_surface_t *surface,
     if (FAILED(hr))
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
+    float x = 0, y = 0;
     if (transform) {
 	rt->SetTransform(D2D1::Matrix3x2F(transform->m11,
 					  transform->m12,
@@ -1666,15 +1738,6 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
     if (op != CAIRO_OPERATOR_SOURCE && op != CAIRO_OPERATOR_OVER)
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    /* If we have a fallback mask clip set on the dst, we have
-     * to go through the fallback path */
-    if (!_cairo_surface_is_win32_printing (&dst->base)) {
-        if (clip != NULL)
-            _cairo_win32_display_surface_set_clip (to_win32_display_surface (dst), clip);
-        else
-            _cairo_win32_display_surface_unset_clip (to_win32_display_surface (dst));
-    }
-
     /* It is vital that dx values for dxy_buf are calculated from the delta of
      * _logical_ x coordinates (not user x coordinates) or else the sum of all
      * previous dx values may start to diverge from the current glyph's x
@@ -1689,96 +1752,7 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
     DWRITE_GLYPH_OFFSET *offsets = const_cast<DWRITE_GLYPH_OFFSET*>(run.glyphOffsets);
 
     BOOL transform = FALSE;
-    /* Needed to calculate bounding box for efficient blitting */
-    INT32 smallestX = INT_MAX;
-    INT32 largestX = 0;
-    INT32 smallestY = INT_MAX;
-    INT32 largestY = 0;
-    for (int i = 0; i < num_glyphs; i++) {
-	if (glyphs[i].x < smallestX) {
-	    smallestX = (INT32)glyphs[i].x;
-	}
-	if (glyphs[i].x > largestX) {
-	    largestX = (INT32)glyphs[i].x;
-	}
-	if (glyphs[i].y < smallestY) {
-	    smallestY = (INT32)glyphs[i].y;
-	}
-	if (glyphs[i].y > largestY) {
-	    largestY = (INT32)glyphs[i].y;
-	}
-    }
-    /**
-     * Here we try to get a rough estimate of the area that this glyph run will
-     * cover on the surface. Since we use GDI interop to draw we will be copying
-     * data around the size of the area of the surface that we map. We will want
-     * to map an area as small as possible to prevent large surfaces to be
-     * copied around. We take the X/Y-size of the font as margin on the left/top
-     * twice the X/Y-size of the font as margin on the right/bottom.
-     * This should always cover the entire area where the glyphs are.
-     */
-    RECT fontArea;
-    fontArea.left = (INT32)(smallestX - scaled_font->font_matrix.xx);
-    fontArea.right = (INT32)(largestX + scaled_font->font_matrix.xx * 2);
-    fontArea.top = (INT32)(smallestY - scaled_font->font_matrix.yy);
-    fontArea.bottom = (INT32)(largestY + scaled_font->font_matrix.yy * 2);
-    if (fontArea.left < 0)
-	fontArea.left = 0;
-    if (fontArea.top < 0)
-	fontArea.top = 0;
-    if (fontArea.bottom > dst->extents.height) {
-	fontArea.bottom = dst->extents.height;
-    }
-    if (fontArea.right > dst->extents.width) {
-	fontArea.right = dst->extents.width;
-    }
-    if (fontArea.right <= fontArea.left ||
-	fontArea.bottom <= fontArea.top) {
-	return CAIRO_INT_STATUS_SUCCESS;
-    }
-    if (fontArea.right > dst->extents.width) {
-	fontArea.right = dst->extents.width;
-    }
-    if (fontArea.bottom > dst->extents.height) {
-	fontArea.bottom = dst->extents.height;
-    }
-
-    run.bidiLevel = 0;
-    run.fontFace = dwriteff->dwriteface;
-    run.isSideways = FALSE;
-    if (dwritesf->mat.xy == 0 && dwritesf->mat.yx == 0 &&
-	dwritesf->mat.xx == scaled_font->font_matrix.xx &&
-	dwritesf->mat.yy == scaled_font->font_matrix.yy) {
-
-	for (int i = 0; i < num_glyphs; i++) {
-	    indices[i] = (WORD) glyphs[i].index;
-	    // Since we will multiply by our ctm matrix later for rotation effects
-	    // and such, adjust positions by the inverse matrix now.
-	    offsets[i].ascenderOffset = (FLOAT)(fontArea.top - glyphs[i].y);
-	    offsets[i].advanceOffset = (FLOAT)(glyphs[i].x - fontArea.left);
-	    advances[i] = 0.0;
-	}
-	run.fontEmSize = (FLOAT)scaled_font->font_matrix.yy;
-    } else {
-	transform = TRUE;
-        // See comment about EPSILON in _cairo_dwrite_glyph_run_from_glyphs
-        const double EPSILON = 0.0001;
-	for (int i = 0; i < num_glyphs; i++) {
-	    indices[i] = (WORD) glyphs[i].index;
-	    double x = glyphs[i].x - fontArea.left + EPSILON;
-	    double y = glyphs[i].y - fontArea.top;
-	    cairo_matrix_transform_point(&dwritesf->mat_inverse, &x, &y);
-	    /**
-	     * Since we will multiply by our ctm matrix later for rotation effects
-	     * and such, adjust positions by the inverse matrix now. The Y-axis
-	     * is inverted so the offset becomes negative.
-	     */
-	    offsets[i].ascenderOffset = -(FLOAT)y;
-	    offsets[i].advanceOffset = (FLOAT)x;
-	    advances[i] = 0.0;
-	}
-	run.fontEmSize = 1.0f;
-    }
+    _cairo_dwrite_glyph_run_from_glyphs(glyphs, num_glyphs, dwritesf, &run, &transform);
 
     cairo_solid_pattern_t *solid_pattern = (cairo_solid_pattern_t *)source;
     COLORREF color = RGB(((int)solid_pattern->color.red_short) >> 8,
@@ -1794,18 +1768,31 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
 	mat = NULL;
     }
 
-    RECT area;
-    area.left = dst->extents.x;
-    area.top = dst->extents.y;
-    area.right = area.left + dst->extents.width;
-    area.bottom = area.top + dst->extents.height;
+    RefPtr<IDWriteGlyphRunAnalysis> runAnalysis;
+    HRESULT hr = DWriteFactory::Instance()->
+	CreateGlyphRunAnalysis(&run, 1, mat,
+			       DWRITE_RENDERING_MODE_ALIASED,
+			       dwritesf->measuring_mode,
+			       0, // baselineOriginX,
+			       0, // baselineOriginY,
+			       &runAnalysis);
+    if (FAILED(hr))
+	return CAIRO_INT_STATUS_UNSUPPORTED;
+    RECT fontArea;
+    hr = runAnalysis->GetAlphaTextureBounds(DWRITE_TEXTURE_ALIASED_1x1, &fontArea);
+    if (FAILED(hr))
+	return CAIRO_INT_STATUS_UNSUPPORTED;
+    InflateRect(&fontArea, 1, 1);
+    /* Needed to calculate bounding box for efficient blitting */
+    RECT copyArea, dstArea = { 0, 0, dst->extents.width, dst->extents.height };
+    IntersectRect(&copyArea, &fontArea, &dstArea);
 
 #ifdef CAIRO_TRY_D2D_TO_GDI
     status = _dwrite_draw_glyphs_to_gdi_surface_d2d(dst,
 						    mat,
 						    &run,
 						    color,
-						    fontArea);
+						    copyArea);
 
     if (status == (cairo_status_t)CAIRO_INT_STATUS_UNSUPPORTED) {
 #endif
@@ -1814,7 +1801,7 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
 							&run,
 							color,
 							dwritesf,
-							fontArea);
+							copyArea);
 
 #ifdef CAIRO_TRY_D2D_TO_GDI
     }

@@ -404,7 +404,7 @@ cairo_type1_font_subset_get_bbox (cairo_type1_font_subset_t *font)
     if (yy == 0.0)
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    /* Freetype uses 1/yy to get units per EM */
+    /* FreeType uses 1/yy to get units per EM */
     font->base.units_per_em = 1.0/yy;
 
     /* If the FontMatrix is not a uniform scale the metrics we extract
@@ -1085,6 +1085,9 @@ cairo_type1_font_for_each_subr (cairo_type1_font_subset_t  *font,
 
 	/* Skip binary data and | or NP token. */
 	p = skip_token (subr_string + subr_length, cleartext_end);
+        if (p == NULL)
+            return CAIRO_INT_STATUS_UNSUPPORTED;
+
 	while (p < cleartext_end && _cairo_isspace(*p))
 	    p++;
 
@@ -1248,6 +1251,9 @@ cairo_type1_font_subset_for_each_glyph (cairo_type1_font_subset_t *font,
 
 	/* Skip binary data and |- or ND token. */
 	p = skip_token (charstring + charstring_length, dict_end);
+        if (p == NULL)
+            return CAIRO_INT_STATUS_UNSUPPORTED;
+
 	while (p < dict_end && _cairo_isspace(*p))
 	    p++;
 

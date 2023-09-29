@@ -148,7 +148,7 @@ static char *ctime_r(const time_t *timep, char *buf)
  * ury]" that specifies the bounding box (in PS coordinates) of the
  * EPS graphics. The parameters are: lower left x, lower left y, upper
  * right x, upper right y. Normally the bbox data is identical to the
- * %%%BoundingBox data in the EPS file.
+ * \%\%\%BoundingBox data in the EPS file.
  *
  **/
 
@@ -912,17 +912,10 @@ _cairo_ps_surface_emit_font_subsets (cairo_ps_surface_t *surface)
     if (unlikely (status))
 	return status;
 
-    status = _cairo_scaled_font_subsets_foreach_scaled (surface->font_subsets,
-                                                        _cairo_ps_surface_emit_scaled_font_subset,
-                                                        surface);
-    if (unlikely (status))
-	return status;
-
-    return _cairo_scaled_font_subsets_foreach_user (surface->font_subsets,
-						    _cairo_ps_surface_emit_scaled_font_subset,
-						    surface);
+    return _cairo_scaled_font_subsets_foreach_scaled (surface->font_subsets,
+						      _cairo_ps_surface_emit_scaled_font_subset,
+						      surface);
 }
-
 
 static cairo_int_status_t
 _cairo_ps_surface_emit_forms (cairo_ps_surface_t *surface)

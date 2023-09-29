@@ -51,6 +51,7 @@
  * @Short_Description: Font support via Core Text on Apple operating systems.
  * @See_Also: #cairo_font_face_t
  *
+ * Provide support for font faces via Core Text.
  **/
 
 /**

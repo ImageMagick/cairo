@@ -920,8 +920,7 @@ record_source (cairo_xlib_surface_t *dst,
     recording = recording_pattern_get_surface (&pattern->base),
     status = _cairo_recording_surface_replay_with_clip (recording,
 							&matrix, &src->base,
-							NULL,
-							FALSE);
+							NULL);
     cairo_surface_destroy (recording);
     if (unlikely (status)) {
 	cairo_surface_destroy (&src->base);

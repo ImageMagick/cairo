@@ -1,3 +1,47 @@
+Release 1.18.0 (2023-09-20 Emmanuele Bassi <ebassi@gnome.org>)
+==============================================================
+
+The first stable cairo release in five years should be cause for celebration.
+
+All the API added in the 1.17 development cycle is now considered stable, and
+will not change.
+
+Many thanks to all the contributors for this release.
+
+The cairo-sphinx tool has been removed; we could not find any instruction on
+how to use it, and no user answered our call for help. If you were using
+cairo-sphinx, please reach out to the cairo maintainers.
+
+Cairo now implements Type 3 color fonts for PDF. Thanks to Adrian Johnson for
+his work on this feature.
+
+Khaled Hosny contributed multiple documentation fixes, to ensure that the
+cairo API reference is up to date. Khaled also fixed multiple compiler
+warnings generated when building cairo.
+
+The XML surface has been removed; it was disabled by default when building
+cairo, and we could not find any downstream distributor that would enable
+it.
+
+The Tee surface is now automatically enabled. Downstream distributors of
+cairo have been enabling for years it in order to build Firefox.
+
+Fujii Hironori and Adrian Johnson fixed multiple issues with the DWrite
+font backend.
+
+John Ralls improved the Quartz surface; mainly, Quartz surfaces now use
+the main display ColorSpace, speeding up rendering operations.
+
+Cairo now hides all private symbols by default on every platform; the old
+"slim" symbols hack to alias internally used symbols has been dropped, in
+favor of using `-Bsymbolic-functions` with toolchains that support it.
+
+Uli Schlachter fixed multiple memory leaks in the code base and test suite,
+and helped with many reviews and general maintenance.
+
+Marc Jeanmougin added new API to expose the Pixman dithering filter to cairo
+patterns; this is currently implemented only for image surfaces.
+
 Release 1.17.8 (2023-01-30 Emmanuele Bassi <ebassi@gnome.org>)
 ==============================================================
 
@@ -108,7 +152,7 @@ includes implementation of core functionality, performance
 optimizations, and stabilization.
 
 Subpixel positioning support allows improved glyph outlines with the
-Freetype font backend.
+FreeType font backend.
 
 For a complete log of changes, please see
 
@@ -8223,7 +8267,7 @@ the PNG generation in the demos. These have now been resolved.
 2003-10
 =======
 Graydon Hoare <graydon@redhat.com> implemented the first real text
-support using Freetype/fontconfig, (previous versions of cairo used
+support using FreeType/fontconfig, (previous versions of cairo used
 Xft and could only draw text when using an X backend).
 
 2003-09

@@ -3222,11 +3222,20 @@ _cairo_debug_svg_render (cairo_t       *cr,
                          double         units_per_em,
                          int            debug_level)
 {
-    return _cairo_render_svg_glyph (svg_document,
-                                    1, 1, 1,
-                                    units_per_em,
-                                    NULL, 0,
-                                    cr) == CAIRO_STATUS_SUCCESS;
+    cairo_status_t status;
+    cairo_bool_t foreground_source_used;
+    cairo_pattern_t *foreground = _cairo_pattern_create_foreground_marker ();
+
+    status = _cairo_render_svg_glyph (svg_document,
+				      1, 1, 1,
+				      units_per_em,
+				      NULL, 0,
+				      cr,
+				      foreground,
+				      &foreground_source_used);
+    cairo_pattern_destroy (foreground);
+
+    return status == CAIRO_STATUS_SUCCESS;
 }
 
 #endif /* DEBUG_SVG_RENDER */

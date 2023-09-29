@@ -105,6 +105,41 @@ _cairo_font_options_init_copy (cairo_font_options_t		*options,
     }
 }
 
+cairo_bool_t
+_cairo_font_options_compare (const cairo_font_options_t	*a,
+                             const cairo_font_options_t	*b)
+{
+    if (a->antialias != b->antialias ||
+        a->subpixel_order != b->subpixel_order ||
+        a->lcd_filter != b->lcd_filter ||
+        a->hint_style != b->hint_style ||
+        a->hint_metrics != b->hint_metrics ||
+        a->round_glyph_positions != b->round_glyph_positions ||
+        a->color_mode != b->color_mode ||
+        a->palette_index != b->palette_index ||
+        a->custom_palette_size != b->custom_palette_size)
+    {
+        return FALSE;
+    }
+
+    if (a->variations && b->variations && strcmp (a->variations, b->variations) != 0)
+        return FALSE;
+    else if (a->variations != b->variations)
+        return FALSE;
+
+    if (a->custom_palette && b->custom_palette &&
+        memcmp (a->custom_palette, b->custom_palette, sizeof (cairo_palette_color_t) * a->custom_palette_size) != 0)
+    {
+        return FALSE;
+    }
+    else if (a->custom_palette != b->custom_palette)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /**
  * cairo_font_options_create:
  *
@@ -217,7 +252,6 @@ cairo_font_options_status (cairo_font_options_t *options)
     else
 	return CAIRO_STATUS_SUCCESS;
 }
-slim_hidden_def (cairo_font_options_status);
 
 /**
  * cairo_font_options_merge:
@@ -283,7 +317,6 @@ cairo_font_options_merge (cairo_font_options_t       *options,
         memcpy (options->custom_palette, other->custom_palette, sizeof (cairo_palette_color_t) * options->custom_palette_size);
     }
 }
-slim_hidden_def (cairo_font_options_merge);
 
 /**
  * cairo_font_options_equal:
@@ -327,7 +360,6 @@ cairo_font_options_equal (const cairo_font_options_t *options,
               memcmp (options->custom_palette, other->custom_palette,
                       sizeof (cairo_palette_color_t) * options->custom_palette_size) == 0)));
 }
-slim_hidden_def (cairo_font_options_equal);
 
 /**
  * cairo_font_options_hash:
@@ -363,7 +395,6 @@ cairo_font_options_hash (const cairo_font_options_t *options)
 	    (options->hint_metrics << 16) |
             (options->color_mode << 20)) ^ hash;
 }
-slim_hidden_def (cairo_font_options_hash);
 
 /**
  * cairo_font_options_set_antialias:
@@ -384,7 +415,6 @@ cairo_font_options_set_antialias (cairo_font_options_t *options,
 
     options->antialias = antialias;
 }
-slim_hidden_def (cairo_font_options_set_antialias);
 
 /**
  * cairo_font_options_get_antialias:
@@ -427,7 +457,6 @@ cairo_font_options_set_subpixel_order (cairo_font_options_t   *options,
 
     options->subpixel_order = subpixel_order;
 }
-slim_hidden_def (cairo_font_options_set_subpixel_order);
 
 /**
  * cairo_font_options_get_subpixel_order:
@@ -543,7 +572,6 @@ cairo_font_options_set_hint_style (cairo_font_options_t *options,
 
     options->hint_style = hint_style;
 }
-slim_hidden_def (cairo_font_options_set_hint_style);
 
 /**
  * cairo_font_options_get_hint_style:
@@ -586,7 +614,6 @@ cairo_font_options_set_hint_metrics (cairo_font_options_t *options,
 
     options->hint_metrics = hint_metrics;
 }
-slim_hidden_def (cairo_font_options_set_hint_metrics);
 
 /**
  * cairo_font_options_get_hint_metrics:
@@ -662,7 +689,7 @@ cairo_font_options_get_variations (cairo_font_options_t *options)
 /**
  * cairo_font_options_set_color_mode:
  * @options: a #cairo_font_options_t
- * @font_color: the new color mode
+ * @color_mode: the new color mode
  *
  * Sets the color mode for the font options object. This controls
  * whether color fonts are to be rendered in color or as outlines.
@@ -842,4 +869,3 @@ cairo_font_options_get_custom_palette_color (cairo_font_options_t *options,
 
     return CAIRO_STATUS_INVALID_INDEX;
 }
-slim_hidden_def (cairo_font_options_get_custom_palette_color);

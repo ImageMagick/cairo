@@ -1335,9 +1335,9 @@ _cairo_win32_scaled_font_load_type1_data (void	            *abstract_font,
 							 length);
 }
 
-static cairo_surface_t *
-_compute_mask (cairo_surface_t *surface,
-	       int quality)
+cairo_surface_t *
+_cairo_compute_glyph_mask (cairo_surface_t *surface,
+			   int quality)
 {
     cairo_image_surface_t *glyph;
     cairo_image_surface_t *mask;
@@ -1421,7 +1421,7 @@ _cairo_win32_scaled_font_init_glyph_surface (cairo_win32_scaled_font_t *scaled_f
     if (status)
 	goto FAIL;
 
-    image = _compute_mask (surface, scaled_font->quality);
+    image = _cairo_compute_glyph_mask (surface, scaled_font->quality);
     status = image->status;
     if (status)
 	goto FAIL;
@@ -1798,7 +1798,7 @@ _cairo_win32_font_face_scaled_font_create (void			*abstract_face,
     if (font_face->hfont) {
         /* Check whether it's OK to go ahead and use the font-face's HFONT. */
         if (_is_scale (ctm, 1.) &&
-            _is_scale (font_matrix, -font_face->logfont.lfHeight)) {
+            _is_scale (font_matrix, -font_face->logfont.lfHeight * WIN32_FONT_LOGICAL_SCALE)) {
             hfont = font_face->hfont;
         }
     }
@@ -1844,8 +1844,6 @@ cairo_win32_font_face_create_for_logfontw_hfont (LOGFONTW *logfont, HFONT font)
     cairo_win32_font_face_t *font_face, key;
     cairo_hash_table_t *hash_table;
     cairo_status_t status;
-
-    CAIRO_MUTEX_INITIALIZE();
 
     hash_table = _cairo_win32_font_face_hash_table_lock ();
     if (unlikely (hash_table == NULL)) {

@@ -1317,8 +1317,10 @@ _cairo_truetype_reverse_cmap (cairo_scaled_font_t *scaled_font,
 
     /* A Format 4 cmap contains 8 uint16_t numbers and 4 arrays of
      * uint16_t each num_segments long. */
-    if (size < (8 + 4*num_segments)*sizeof(uint16_t))
-	return CAIRO_INT_STATUS_UNSUPPORTED;
+    if (size < (8 + 4*num_segments)*sizeof(uint16_t)) {
+        status = CAIRO_INT_STATUS_UNSUPPORTED;
+        goto fail;
+    }
 
     end_code = map->endCount;
     start_code = &(end_code[num_segments + 1]);
@@ -1355,8 +1357,10 @@ _cairo_truetype_reverse_cmap (cairo_scaled_font_t *scaled_font,
 	    int j;
 
 	    if (range_size > 0) {
-		if ((char*)glyph_ids + 2*range_size > (char*)map + size)
-		    return CAIRO_INT_STATUS_UNSUPPORTED;
+		if ((char*)glyph_ids + 2*range_size > (char*)map + size) {
+                    status = CAIRO_INT_STATUS_UNSUPPORTED;
+                    goto fail;
+                }
 
 		for (j = 0; j < range_size; j++) {
 		    if (glyph_ids[j] == g_id_be) {
@@ -1471,10 +1475,14 @@ find_name (tt_name_t *name, unsigned long size, int name_id, int platform, int e
 	    if (offset + len > size)
 		return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
-	    str = _cairo_strndup (((char*)name) + offset, len);
+	    str = _cairo_malloc (len + 1);
 	    if (str == NULL)
 		return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
+	    memcpy (str,
+		    ((char*)name) + offset,
+		    len);
+	    str[len] = 0;
 	    break;
 	}
     }

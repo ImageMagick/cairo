@@ -217,7 +217,6 @@ cairo_device_reference (cairo_device_t *device)
 
     return device;
 }
-slim_hidden_def (cairo_device_reference);
 
 /**
  * cairo_device_status:
@@ -272,7 +271,6 @@ cairo_device_flush (cairo_device_t *device)
 	    status = _cairo_device_set_error (device, status);
     }
 }
-slim_hidden_def (cairo_device_flush);
 
 /**
  * cairo_device_finish:
@@ -316,7 +314,6 @@ cairo_device_finish (cairo_device_t *device)
      */
     device->finished = TRUE;
 }
-slim_hidden_def (cairo_device_finish);
 
 /**
  * cairo_device_destroy:
@@ -357,7 +354,6 @@ cairo_device_destroy (cairo_device_t *device)
     _cairo_user_data_array_fini (&user_data);
 
 }
-slim_hidden_def (cairo_device_destroy);
 
 /**
  * cairo_device_get_type:
@@ -432,7 +428,6 @@ cairo_device_acquire (cairo_device_t *device)
 
     return CAIRO_STATUS_SUCCESS;
 }
-slim_hidden_def (cairo_device_acquire);
 
 /**
  * cairo_device_release:
@@ -458,7 +453,6 @@ cairo_device_release (cairo_device_t *device)
 
     CAIRO_MUTEX_UNLOCK (device->mutex);
 }
-slim_hidden_def (cairo_device_release);
 
 cairo_status_t
 _cairo_device_set_error (cairo_device_t *device,

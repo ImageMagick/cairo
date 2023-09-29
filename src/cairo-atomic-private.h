@@ -304,16 +304,16 @@ _cairo_atomic_int_get (cairo_atomic_int_t *x)
 # define _cairo_atomic_int_get_relaxed(x) *(x)
 # define _cairo_atomic_int_set_relaxed(x, val) *(x) = (val)
 
-# define _cairo_atomic_int_inc(x) ((void) InterlockedIncrement (x))
-# define _cairo_atomic_int_dec(x) ((void) InterlockedDecrement (x))
-# define _cairo_atomic_int_dec_and_test(x) (InterlockedDecrement (x) == 0)
+# define _cairo_atomic_int_inc(x) ((void) InterlockedIncrement ((LONG*)x))
+# define _cairo_atomic_int_dec(x) ((void) InterlockedDecrement ((LONG*)x))
+# define _cairo_atomic_int_dec_and_test(x) (InterlockedDecrement ((LONG*)x) == 0)
 
 static cairo_always_inline cairo_bool_t
 _cairo_atomic_int_cmpxchg (cairo_atomic_int_t *x,
                            cairo_atomic_int_t oldv,
                            cairo_atomic_int_t newv)
 {
-    return InterlockedCompareExchange ((unsigned int*)x, (unsigned int)newv, (unsigned int)oldv) == oldv;
+    return InterlockedCompareExchange ((LONG*)x, (LONG)newv, (LONG)oldv) == oldv;
 }
 
 static cairo_always_inline void *

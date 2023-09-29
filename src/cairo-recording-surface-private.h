@@ -155,6 +155,7 @@ typedef struct _cairo_recording_surface {
     cairo_bool_t optimize_clears;
     cairo_bool_t has_bilevel_alpha;
     cairo_bool_t has_only_op_over;
+    cairo_bool_t has_tags;
 
     struct bbtree {
 	cairo_box_t extents;
@@ -182,8 +183,6 @@ typedef struct _cairo_recording_region_array {
     cairo_list_t link;
 } cairo_recording_regions_array_t;
 
-slim_hidden_proto (cairo_recording_surface_create);
-
 cairo_private cairo_int_status_t
 _cairo_recording_surface_get_path (cairo_surface_t	 *surface,
 				   cairo_path_fixed_t *path);
@@ -204,18 +203,26 @@ _cairo_recording_surface_replay_with_foreground_color (cairo_surface_t     *surf
                                                        cairo_bool_t        *foreground_used);
 
 cairo_private cairo_status_t
-_cairo_recording_surface_replay_with_clip (cairo_surface_t *surface,
-					   const cairo_matrix_t *surface_transform,
-					   cairo_surface_t *target,
-					   const cairo_clip_t *target_clip,
-                                           cairo_bool_t surface_is_unbounded);
+_cairo_recording_surface_replay_with_transform (cairo_surface_t          *surface,
+						const cairo_matrix_t     *surface_transform,
+						cairo_surface_t          *target,
+						cairo_bool_t              surface_is_unbounded,
+						cairo_bool_t              replay_all);
+
+cairo_private cairo_status_t
+_cairo_recording_surface_replay_with_clip (cairo_surface_t               *surface,
+					   const cairo_matrix_t          *surface_transform,
+					   cairo_surface_t               *target,
+					   const cairo_clip_t            *target_clip);
 
 cairo_private cairo_status_t
 _cairo_recording_surface_replay_and_create_regions (cairo_surface_t      *surface,
                                                     unsigned int          regions_id,
 						    const cairo_matrix_t *surface_transform,
 						    cairo_surface_t      *target,
-						    cairo_bool_t          surface_is_unbounded);
+						    cairo_bool_t          surface_is_unbounded,
+						    cairo_bool_t          replay_all);
+
 cairo_private cairo_status_t
 _cairo_recording_surface_replay_region (cairo_surface_t			*surface,
                                         unsigned int                     regions_id,
@@ -238,6 +245,9 @@ _cairo_recording_surface_has_only_bilevel_alpha (cairo_recording_surface_t *surf
 
 cairo_private cairo_bool_t
 _cairo_recording_surface_has_only_op_over (cairo_recording_surface_t *surface);
+
+cairo_private cairo_bool_t
+_cairo_recording_surface_has_tags (cairo_surface_t *surface);
 
 cairo_private cairo_status_t
 _cairo_recording_surface_region_array_attach (cairo_surface_t *surface,

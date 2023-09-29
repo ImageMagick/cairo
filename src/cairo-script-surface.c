@@ -371,6 +371,21 @@ _filter_to_string (cairo_filter_t filter)
 }
 
 static const char *
+_dither_to_string (cairo_dither_t dither)
+{
+    static const char *names[] = {
+	"DITHER_DEFAULT",	/* CAIRO_FILTER_FAST */
+	"DITHER_NONE",		/* CAIRO_FILTER_GOOD */
+	"DITHER_FAST",		/* CAIRO_FILTER_BEST */
+	"DITHER_GOOD",		/* CAIRO_FILTER_NEAREST */
+	"DITHER_BEST",		/* CAIRO_FILTER_BILINEAR */
+    };
+    assert (dither < ARRAY_LENGTH (names));
+    return names[dither];
+}
+
+
+static const char *
 _fill_rule_to_string (cairo_fill_rule_t rule)
 {
     static const char *names[] = {
@@ -1731,6 +1746,17 @@ _emit_pattern (cairo_script_surface_t *surface,
 				     " //%s set-filter\n ",
 				     _filter_to_string (pattern->filter));
     }
+    /* XXX need to discriminate the user explicitly setting the default */
+    if (pattern->dither != CAIRO_DITHER_DEFAULT) {
+	if (need_newline) {
+	    _cairo_output_stream_puts (ctx->stream, "\n ");
+	    need_newline = FALSE;
+	}
+
+	_cairo_output_stream_printf (ctx->stream,
+				     " //%s set-dither\n ",
+				     _dither_to_string (pattern->dither));
+    }
     if (! is_default_extend ){
 	if (need_newline) {
 	    _cairo_output_stream_puts (ctx->stream, "\n ");
@@ -2204,6 +2230,7 @@ _cairo_script_surface_finish (void *abstract_surface)
 
     _cairo_pattern_fini (&surface->cr.current_source.base);
     _cairo_path_fixed_fini (&surface->cr.current_path);
+    _cairo_font_options_fini (&surface->cr.current_font_options);
     _cairo_surface_clipper_reset (&surface->clipper);
 
     status = cairo_device_acquire (&ctx->base);
@@ -2239,8 +2266,7 @@ _cairo_script_surface_finish (void *abstract_surface)
 		    cairo_list_del (&surface->operand.link);
 		} else {
 		    link->operand.type = DEFERRED;
-		    cairo_list_swap (&link->operand.link,
-				     &surface->operand.link);
+		    cairo_list_move_list (&surface->operand.link, &link->operand.link);
 		    cairo_list_add (&link->link, &ctx->deferred);
 		}
 	    }
@@ -3964,7 +3990,6 @@ cairo_script_surface_create (cairo_device_t *script,
 						   content, extents,
 						   NULL)->base;
 }
-slim_hidden_def (cairo_script_surface_create);
 
 /**
  * cairo_script_surface_create_for_target:

@@ -98,7 +98,6 @@ ignore_headers = [
   'cairo-svg-surface-private.h',
   'cairo-tag-attributes-private.h',
   'cairo-tag-stack-private.h',
-  'cairo-tee-surface-private.h',
   'cairo-time-private.h',
   'cairo-traps-private.h',
   'cairo-tristrip-private.h',

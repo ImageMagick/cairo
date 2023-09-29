@@ -1112,8 +1112,7 @@ record_to_picture (cairo_surface_t *target,
 
     status = _cairo_recording_surface_replay_with_clip (source,
 							&matrix, tmp,
-							NULL,
-                                                        FALSE);
+							NULL);
     if (unlikely (status)) {
 	cairo_surface_destroy (tmp);
 	return (cairo_xcb_picture_t *) _cairo_surface_create_in_error (status);

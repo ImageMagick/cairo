@@ -457,12 +457,22 @@ _cairo_type3_glyph_surface_emit_glyph (void		     *abstract_surface,
     _cairo_type3_glyph_surface_set_stream (surface, stream);
 
     _cairo_scaled_font_freeze_cache (surface->scaled_font);
+
+    /* Check if this is a color glyph and bail out if it is */
     status = _cairo_scaled_glyph_lookup (surface->scaled_font,
 					 glyph_index,
-					 CAIRO_SCALED_GLYPH_INFO_METRICS |
-					 CAIRO_SCALED_GLYPH_INFO_RECORDING_SURFACE,
+					 CAIRO_SCALED_GLYPH_INFO_COLOR_SURFACE,
 					 NULL, /* foreground color */
 					 &scaled_glyph);
+    if (status == CAIRO_INT_STATUS_SUCCESS) {
+	status = CAIRO_INT_STATUS_UNSUPPORTED;
+	goto FAIL;
+    } status = _cairo_scaled_glyph_lookup (surface->scaled_font,
+					   glyph_index,
+					   CAIRO_SCALED_GLYPH_INFO_METRICS |
+					   CAIRO_SCALED_GLYPH_INFO_RECORDING_SURFACE,
+					   NULL, /* foreground color */
+					   &scaled_glyph);
     if (status == CAIRO_INT_STATUS_UNSUPPORTED) {
 	status = _cairo_scaled_glyph_lookup (surface->scaled_font,
 					     glyph_index,

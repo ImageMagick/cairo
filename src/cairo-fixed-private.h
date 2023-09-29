@@ -66,7 +66,7 @@
 static inline cairo_fixed_t
 _cairo_fixed_from_int (int i)
 {
-    return i << CAIRO_FIXED_FRAC_BITS;
+    return (cairo_fixed_unsigned_t)i << CAIRO_FIXED_FRAC_BITS;
 }
 
 /* This is the "magic number" approach to converting a double into fixed
