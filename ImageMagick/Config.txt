@@ -12,6 +12,7 @@ src
 src\win32
 
 [INCLUDES]
+src
 freetype->include
 glib->.
 pixman->pixman
