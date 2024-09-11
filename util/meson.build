@@ -41,7 +41,3 @@ foreach util : cairo_utils
     dependencies: deps + util_deps + [libcairo_dep, libcairoscript_dep],
   )
 endforeach
-
-if conf.get('CAIRO_HAS_DLSYM', 0) == 1 and cc.has_header('execinfo.h')
-  libmallocstats = library('malloc-stats', 'malloc-stats.c', dependencies : dl_dep)
-endif

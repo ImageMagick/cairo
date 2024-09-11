@@ -39,6 +39,7 @@
 
 #include "cairo-script-interpreter.h"
 
+#include <stddef.h>
 #include <setjmp.h>
 
 #ifdef _MSC_VER
@@ -123,10 +124,6 @@
 #endif
 
 #ifdef __GNUC__
-#ifndef offsetof
-#define offsetof(type, member) \
-    ((char *) &((type *) 0)->member - (char *) 0)
-#endif
 #define csi_container_of(ptr, type, member) ({ \
     const typeof(((type *) 0)->member) *mptr__ = (ptr); \
     (type *) ((char *) mptr__ - offsetof (type, member)); \

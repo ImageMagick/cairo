@@ -639,7 +639,7 @@ _cairo_dwrite_font_face_scaled_font_create (void			*abstract_face,
     cairo_dwrite_font_face_t *font_face = static_cast<cairo_dwrite_font_face_t*>(abstract_face);
 
     /* Must do malloc and not C++ new, since Cairo frees this. */
-    cairo_dwrite_scaled_font_t *dwrite_font = (cairo_dwrite_scaled_font_t*)_cairo_malloc(
+    cairo_dwrite_scaled_font_t *dwrite_font = (cairo_dwrite_scaled_font_t*)_cairo_calloc(
 	sizeof(cairo_dwrite_scaled_font_t));
     if (unlikely(dwrite_font == NULL))
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);

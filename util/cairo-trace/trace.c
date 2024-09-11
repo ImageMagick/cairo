@@ -1742,7 +1742,7 @@ _emit_image (cairo_surface_t *image,
 	break;
     case CAIRO_FORMAT_A8:
 	for (row = height; row--; ) {
-	    _write_data (&stream, rowdata, width);
+	    _write_data (&stream, data, width);
 	    data += stride;
 	}
 	break;

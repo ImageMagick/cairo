@@ -333,7 +333,7 @@ _win32_scaled_font_create (LOGFONTW                   *logfont,
     if (hdc == NULL)
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
-    f = _cairo_malloc (sizeof(cairo_win32_scaled_font_t));
+    f = _cairo_calloc (sizeof(cairo_win32_scaled_font_t));
     if (f == NULL)
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
@@ -1845,8 +1845,6 @@ cairo_win32_font_face_create_for_logfontw_hfont (LOGFONTW *logfont, HFONT font)
     cairo_hash_table_t *hash_table;
     cairo_status_t status;
 
-    CAIRO_MUTEX_INITIALIZE();
-
     hash_table = _cairo_win32_font_face_hash_table_lock ();
     if (unlikely (hash_table == NULL)) {
         _cairo_error_throw (CAIRO_STATUS_NO_MEMORY);
@@ -1870,7 +1868,7 @@ cairo_win32_font_face_create_for_logfontw_hfont (LOGFONTW *logfont, HFONT font)
     }
 
     /* Otherwise create it and insert into hash table. */
-    font_face = _cairo_malloc (sizeof (cairo_win32_font_face_t));
+    font_face = _cairo_calloc (sizeof (cairo_win32_font_face_t));
     if (!font_face) {
         _cairo_error_throw (CAIRO_STATUS_NO_MEMORY);
 	goto FAIL;

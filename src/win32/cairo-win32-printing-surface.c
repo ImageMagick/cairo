@@ -1524,7 +1524,7 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
     dash_array = NULL;
     if (style->num_dashes) {
 	pen_style |= PS_USERSTYLE;
-	dash_array = calloc (sizeof (DWORD), style->num_dashes);
+	dash_array = _cairo_calloc_ab (sizeof (DWORD), style->num_dashes);
 	for (i = 0; i < style->num_dashes; i++) {
 	    dash_array[i] = (DWORD) (scale * style->dash[i]);
 	}
@@ -2167,7 +2167,7 @@ cairo_win32_printing_surface_create (HDC hdc)
     cairo_win32_printing_surface_t *surface;
     cairo_surface_t *paginated;
 
-    surface = _cairo_malloc (sizeof (cairo_win32_printing_surface_t));
+    surface = _cairo_calloc (sizeof (cairo_win32_printing_surface_t));
     if (surface == NULL)
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
 

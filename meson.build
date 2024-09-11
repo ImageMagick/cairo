@@ -1,12 +1,14 @@
-project('cairo', 'c', 'cpp',
-  meson_version: '>= 0.59.0',
+project('cairo', 'c',
+  meson_version: '>= 1.3.0',
   version: run_command(find_program('version.py'), check: true).stdout().strip(),
-  default_options: ['warning_level=2'],
+  default_options: ['c_std=gnu11,c11',
+                    'warning_level=2'],
 )
 
-freetype_required_version = '>= 9.7.3'
-freetype_colrv1_required_version = '>= 25.0.19'
-fontconfig_required_version = '>= 2.2.95'
+freetype_required_version = '>= 23.0.17' # Release version 2.10
+freetype_colrv1_required_version = '>= 25.0.19' # Release version 2.13
+fontconfig_required_version = '>= 2.13.0'
+libpng_required_version = '>= 1.4.0'
 xrender_required_version = '>= 0.6'
 xcb_required_version = '>= 1.6'
 xcb_render_required_version = '>= 1.6'
@@ -135,6 +137,7 @@ check_headers = [
   ['xlocale.h'],
   ['sys/ioctl.h'],
   ['intsafe.h'],
+  ['alloca.h'],
 ]
 
 check_types = [
@@ -232,6 +235,7 @@ endif
 
 png_dep = dependency('libpng',
   required: get_option('png'),
+  version: libpng_required_version,
   fallback: ['libpng', 'libpng_dep']
 )
 if png_dep.found()
@@ -313,26 +317,14 @@ if freetype_dep.found()
     'compile-deps': [fontconfig_dep.partial_dependency(compile_args: true, includes: true)],
   }]
 
-  ft_check_funcs = [
-    'FT_Get_X11_Font_Format',
-    'FT_GlyphSlot_Embolden',
-    'FT_GlyphSlot_Oblique',
-    'FT_Load_Sfnt_Table',
-    'FT_Library_SetLcdFilter',
-    'FT_Get_Var_Design_Coordinates',
-    'FT_Done_MM_Var',
-    'FT_Palette_Select',
-  ]
-
   if freetype_dep.type_name() == 'internal'
-    foreach func : ft_check_funcs
-      conf.set('HAVE_@0@'.format(func.to_upper()), 1)
-    endforeach
+    if freetype_dep.version().version_compare(freetype_colrv1_required_version)
+      conf.set('HAVE_FT_SVG_DOCUMENT', 1)
+      conf.set('HAVE_FT_LOAD_NO_SVG', 1)
+      conf.set('HAVE_FT_COLR_V1', 1)
+    endif
     internal_deps += [freetype_dep]
   else
-    if not cc.links(files('meson-cc-tests/ft_has_color.c'), dependencies: freetype_dep, name: 'FT has color')
-      conf.set('FT_HAS_COLOR', '(0)')
-    endif
     if png_dep.found() and \
         cc.has_type('FT_SVG_Document', dependencies: freetype_dep, prefix: '#include <freetype/otsvg.h>')
       conf.set('HAVE_FT_SVG_DOCUMENT', 1)
@@ -340,11 +332,13 @@ if freetype_dep.found()
         conf.set('CAIRO_CAN_TEST_TTX_FONT', 1)
       endif
     endif
+    if cc.has_define('FT_LOAD_NO_SVG', dependencies: freetype_dep, prefix: '#include <freetype/freetype.h>')
+      conf.set('HAVE_FT_LOAD_NO_SVG', 1)
+    endif
     if freetype_dep.version().version_compare(freetype_colrv1_required_version) and \
        cc.has_function('FT_Get_Color_Glyph_Paint', dependencies: freetype_dep)
       conf.set('HAVE_FT_COLR_V1', 1)
     endif
-    check_funcs += ft_check_funcs
     deps += [freetype_dep]
   endif
 endif
@@ -369,7 +363,7 @@ if x11_dep.found() and xext_dep.found()
 
   # Can skip the run check by providing the result in a cross file or
   # native file as bool property value.
-  prop = meson.get_external_property('ipc_rmid_deferred_release', 'auto')
+  prop = meson.get_external_property('ipc_rmid_deferred_release', meson.is_cross_build() ? 'false' : 'auto')
   # We don't know the type of prop (bool, string) but need to differentiate
   # between a set value (bool) or the fallback value (string), so convert to
   # a string and check the string value.
@@ -489,6 +483,8 @@ if host_machine.system() == 'darwin' and not get_option('quartz').disabled()
 endif
 
 if host_machine.system() == 'windows'
+  add_languages('cpp')
+
   add_project_arguments('-DWIN32_LEAN_AND_MEAN', '-DNOMINMAX', language: ['c', 'cpp'])
 
   win32_extra_deps = [
@@ -633,12 +629,15 @@ if feature_conf.get('CAIRO_HAS_SVG_SURFACE', 0) == 1
 endif
 
 pixman_dep = dependency('pixman-1',
-  version: '>= 0.36.0',
+  version: '>= 0.40.0',
   fallback: ['pixman', 'idep_pixman'],
 )
 if pixman_dep.found()
   feature_conf.set('CAIRO_HAS_IMAGE_SURFACE', 1)
   conf.set('HAS_PIXMAN_GLYPHS', 1)
+  if pixman_dep.version().version_compare('>= 0.42.3')
+    conf.set('HAS_PIXMAN_r8g8b8_sRGB', 1)
+  endif
   if pixman_dep.type_name() == 'internal'
     internal_deps += [pixman_dep]
   else
@@ -731,14 +730,22 @@ endforeach
 
 extra_link_args += pthread_link_args
 
-if cc.links(files('meson-cc-tests/atomic-ops-cxx11.c'), name: 'Atomic ops: cxx11')
-  conf.set('HAVE_CXX11_ATOMIC_PRIMITIVES', 1)
-elif cc.links(files('meson-cc-tests/atomic-ops-gcc-legacy.c'), name: 'Atomic ops: gcc legacy')
-  conf.set('HAVE_GCC_LEGACY_ATOMICS', 1)
-elif cc.has_header('atomic_ops.h')
-  conf.set('HAVE_LIB_ATOMIC_OPS', 1)
-elif cc.has_header('libkern/OSAtomic.h')
-  conf.set('HAVE_OS_ATOMIC_OPS', 1)
+# Atomics are an optional feature in C11. Also need to check that C11 atomics are lock free.
+# Windows can't use C11 atomics as some files are compiled with C++.
+if host_machine.system() != 'windows'
+  if cc.links(files('meson-cc-tests/atomic-ops-c11.c'), name: 'Atomic ops: c11')
+    conf.set('HAVE_C11_ATOMIC_PRIMITIVES', 1)
+  elif cc.links(files('meson-cc-tests/atomic-ops-cxx11.c'), name: 'Atomic ops: cxx11')
+    conf.set('HAVE_CXX11_ATOMIC_PRIMITIVES', 1)
+  elif cc.links(files('meson-cc-tests/atomic-ops-gcc-legacy.c'), name: 'Atomic ops: gcc legacy')
+    conf.set('HAVE_GCC_LEGACY_ATOMICS', 1)
+  elif cc.has_header('atomic_ops.h')
+    conf.set('HAVE_LIB_ATOMIC_OPS', 1)
+  elif cc.has_header('libkern/OSAtomic.h')
+    conf.set('HAVE_OS_ATOMIC_OPS', 1)
+  else
+    warning('Atomic ops not supported.')
+  endif
 endif
 
 test_mkdir_c_args = []
@@ -762,7 +769,7 @@ if not ['x86', 'x86_64'].contains(host_machine.cpu_family())
   conf.set('ATOMIC_OP_NEEDS_MEMORY_BARRIER', 1)
 endif
 
-have_ld_preload = ['linux', 'freebsd', 'darwin', 'dragonfly'].contains(host_machine.system())
+have_ld_preload = ['linux', 'freebsd', 'darwin', 'dragonfly', 'sunos'].contains(host_machine.system())
 
 if have_ld_preload and zlib_dep.found() and conf.get('CAIRO_HAS_REAL_PTHREAD', 0) == 1 and conf.get('CAIRO_HAS_DLSYM', 0) == 1
   conf.set('CAIRO_HAS_TRACE', 1)
