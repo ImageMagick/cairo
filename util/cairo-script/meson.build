@@ -46,22 +46,3 @@ pkgmod.generate(libcairoscript,
 )
 
 meson.override_dependency('cairo-script-interpreter', libcairoscript_dep)
-
-csi_replay_exe = executable('csi-replay', csi_replay_sources,
-  include_directories: [incbase],
-  dependencies: deps + [libcairo_dep, libcairoscript_dep],
-)
-
-csi_exec_exe = executable('csi-exec', csi_exec_sources,
-  include_directories: [incbase],
-  dependencies: deps + [libcairo_dep, libcairoscript_dep],
-)
-
-if feature_conf.get('CAIRO_HAS_SCRIPT_SURFACE', 0) == 1 and conf.get('HAVE_LIBGEN_H', 0) == 1
-  csi_trace_exe = executable('csi-trace', csi_trace_sources,
-    include_directories: [incbase],
-    dependencies: deps + [libcairo_dep, libcairoscript_dep],
-  )
-endif
-
-install_headers(cairoscript_interpreter_headers, subdir: 'cairo')
