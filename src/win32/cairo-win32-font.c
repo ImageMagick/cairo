@@ -1685,6 +1685,8 @@ _cairo_win32_font_face_hash_table_destroy (void)
 static cairo_hash_table_t *
 _cairo_win32_font_face_hash_table_lock (void)
 {
+    CAIRO_MUTEX_INITIALIZE ();
+
     CAIRO_MUTEX_LOCK (_cairo_win32_font_face_mutex);
 
     if (unlikely (cairo_win32_font_face_hash_table == NULL))
