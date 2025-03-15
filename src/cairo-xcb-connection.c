@@ -239,7 +239,7 @@ _cairo_xcb_connection_parse_xrender_formats (cairo_xcb_connection_t *connection,
 /*
  * We require support for depth 1, 8, 24 and 32 pixmaps
  */
-#define DEPTH_MASK(d)	(1 << ((d) - 1))
+#define DEPTH_MASK(d)	((uint32_t)(1) << ((d) - 1))
 #define REQUIRED_DEPTHS	(DEPTH_MASK(1) | \
 			 DEPTH_MASK(8) | \
 			 DEPTH_MASK(24) | \

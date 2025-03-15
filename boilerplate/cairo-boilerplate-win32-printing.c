@@ -36,51 +36,6 @@
 
 #include <windows.h>
 
-#if !defined(POSTSCRIPT_IDENTIFY)
-# define POSTSCRIPT_IDENTIFY 0x1015
-#endif
-
-#if !defined(PSIDENT_GDICENTRIC)
-# define PSIDENT_GDICENTRIC 0x0000
-#endif
-
-#if !defined(GET_PS_FEATURESETTING)
-# define GET_PS_FEATURESETTING 0x1019
-#endif
-
-#if !defined(FEATURESETTING_PSLEVEL)
-# define FEATURESETTING_PSLEVEL 0x0002
-#endif
-
-static cairo_status_t
-_cairo_win32_print_gdi_error (const char *context)
-{
-    void *lpMsgBuf;
-    DWORD last_error = GetLastError ();
-
-    if (!FormatMessageW (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			 FORMAT_MESSAGE_FROM_SYSTEM,
-			 NULL,
-			 last_error,
-			 MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-			 (LPWSTR) &lpMsgBuf,
-			 0, NULL)) {
-	fprintf (stderr, "%s: Unknown GDI error", context);
-    } else {
-	fprintf (stderr, "%s: %S", context, (wchar_t *)lpMsgBuf);
-
-	LocalFree (lpMsgBuf);
-    }
-
-    fflush (stderr);
-
-    /* We should switch off of last_status, but we'd either return
-     * CAIRO_STATUS_NO_MEMORY or CAIRO_STATUS_UNKNOWN_ERROR and there
-     * is no CAIRO_STATUS_UNKNOWN_ERROR.
-     */
-    return CAIRO_STATUS_NO_MEMORY;
-}
-
 static cairo_user_data_key_t win32_closure_key;
 
 typedef struct _win32_target_closure {
@@ -174,7 +129,7 @@ create_printer_dc (win32_target_closure_t *ptc)
     xform.eDx = 0;
     xform.eDy = printable_height - ptc->height*y_dpi/72.0;
     if (!SetWorldTransform (ptc->dc, &xform)) {
-	_cairo_win32_print_gdi_error ("cairo-boilerplate-win32-printing:SetWorldTransform");
+        fprintf (stderr, "%s:%s\n", "cairo-boilerplate-win32-printing", "SetWorldTransform");
 	return;
     }
 

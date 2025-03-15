@@ -16,7 +16,7 @@ workflow:
 variables:
   FDO_UPSTREAM_REPO: 'cairo/cairo'
   FDO_DISTRIBUTION_VERSION: '40'
-  FDO_DISTRIBUTION_TAG: '2024-06-06.0'
+  FDO_DISTRIBUTION_TAG: '2024-07-26-coverage.0'
 
   # TODO: should probably get its own image at some point instead of reusing the GStreamer one
   # See https://gitlab.freedesktop.org/gstreamer/gstreamer/-/blob/main/.gitlab-image-tags.yml for latest
@@ -26,10 +26,15 @@ variables:
   DEFAULT_MESON_ARGS: >
     --default-library=both
 
+  RUST_STABLE: "1.80.0"
+  RUSTUP_VERSION: "1.27.1"
+
 stages:
   - prep
   - build
   - test
+  - analysis
+  - deploy
 
 # Global CI policy: This can be used to configure global behaviour our our jobs
 default:
@@ -97,6 +102,20 @@ fedora image:
       util-linux
       poppler-utils
       clang
+      clang-analyzer
+      clang-tools-extra
+      compiler-rt
+      libasan
+      libubsan
+      llvm
+      wget
+    FDO_DISTRIBUTION_EXEC: >-
+      bash .gitlab-ci/install-rust.sh --rustup-version ${RUSTUP_VERSION} \
+                              --stable ${RUST_STABLE} \
+                              --arch x86_64-unknown-linux-gnu &&
+      bash .gitlab-ci/install-rust-tools.sh &&
+      bash .gitlab-ci/install-grcov.sh &&
+      rm -rf /root/.cargo /root/.cache    # cleanup compilation dirs; binaries are installed now
 
 .build fedora:
   extends:
@@ -460,3 +479,59 @@ macOS x86 host:
     - export CAIRO_TEST_IGNORE_quartz_rgb24=$(tr '\n' ',' < .gitlab-ci/ignore-quartz-rgb24.txt)
     - export CAIRO_TEST_TARGET=quartz
     - (cd build/test && srcdir=../../test ./cairo-test-suite)
+
+# Run static analysis.
+static-scan:
+  stage: 'analysis'
+  extends:
+    - '.fdo.distribution-image@fedora'
+  variables:
+    MESON_ARGS: >
+      --buildtype=debug
+  script:
+    - meson setup ${MESON_ARGS} _scan_build .
+    - ninja -C _scan_build scan-build
+  artifacts:
+    name: "cairo-${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    when: always
+    paths:
+      - "_scan_build/meson-logs/scanbuild"
+
+coverage:
+  stage: 'analysis'
+  extends:
+    - '.fdo.distribution-image@fedora'
+  needs:
+    - job: 'fedora image'
+      artifacts: false
+  script:
+    - source ./.gitlab-ci/env.sh
+    - bash -x ./.gitlab-ci/build-with-coverage.sh
+    - bash -x ./.gitlab-ci/gen-coverage.sh
+  coverage: '/Coverage: \d+\.\d+/'
+  artifacts:
+    name: "cairo-${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    expire_in: 2 days
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: public/coverage.xml
+    paths:
+      - "_build/meson-logs"
+      - public
+
+pages:
+  stage: 'deploy'
+  needs:
+    - job: coverage
+  script:
+    - mkdir -p public
+    - cp .gitlab-ci/pages-index.html public/index.html
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 day
+  rules:
+    # Restrict to the main branch so not every branch tries to deploy the web site
+    - if: ($CI_DEFAULT_BRANCH == $CI_COMMIT_BRANCH)

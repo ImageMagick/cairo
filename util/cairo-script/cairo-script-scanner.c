@@ -46,7 +46,7 @@
 #include <zlib.h>
 
 #if HAVE_LZO
-#include <lzo/lzo2a.h>
+#include <lzo2a.h>
 #endif
 
 #define DEBUG_SCAN 0

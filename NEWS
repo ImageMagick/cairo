@@ -1,3 +1,24 @@
+Release 1.18.4 (2025-03-08 Emmanuele Bassi <ebassi@gnome.org>)
+==============================================================
+
+A new stable release.
+
+The dependency on LZO has been made optional through a build time
+configuration toggle. [!580]
+
+You can build Cairo against a Freetype installation that does not have the
+FT_Color type. [#792]
+
+Cairo tests now build on Solaris 11.4 with GCC 14. [!599]
+
+The DirectWrite backend now builds on MINGW 11. [!600]
+
+Thanks to Luca Bacci, the DirectWrite backend now supports font
+variations and proper glyph coverage. [#877, !602]
+
+Support for Windows 98 has been removed. The minimum requirement for
+Windows is now Vista.
+
 Release 1.18.2 (2024-09-01 Emmanuele Bassi <ebassi@gnome.org>)
 ==============================================================
 

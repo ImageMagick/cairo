@@ -2,6 +2,7 @@ project('cairo', 'c',
   meson_version: '>= 1.3.0',
   version: run_command(find_program('version.py'), check: true).stdout().strip(),
   default_options: ['c_std=gnu11,c11',
+                    'cpp_std=gnu++11,c++11',
                     'warning_level=2'],
 )
 
@@ -138,6 +139,7 @@ check_headers = [
   ['sys/ioctl.h'],
   ['intsafe.h'],
   ['alloca.h'],
+  ['termios.h'],
 ]
 
 check_types = [
@@ -198,7 +200,7 @@ else
   endif
 endif
 
-lzo_dep = dependency('lzo2', required: false)
+lzo_dep = dependency('lzo2', required: get_option('lzo'))
 if lzo_dep.found()
   conf.set('HAVE_LZO', 1)
 endif
@@ -483,7 +485,7 @@ if host_machine.system() == 'darwin' and not get_option('quartz').disabled()
 endif
 
 if host_machine.system() == 'windows'
-  add_languages('cpp')
+  add_languages('cpp', native: false)
 
   add_project_arguments('-DWIN32_LEAN_AND_MEAN', '-DNOMINMAX', language: ['c', 'cpp'])
 

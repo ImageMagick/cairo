@@ -60,7 +60,7 @@
 #endif
 
 #if HAVE_LZO
-#include <lzo/lzo2a.h>
+#include <lzo2a.h>
 #endif
 
 #ifdef HAVE_MMAP

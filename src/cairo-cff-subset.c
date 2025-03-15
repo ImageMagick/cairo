@@ -952,9 +952,13 @@ cairo_cff_font_read_private_dict (cairo_cff_font_t   *font,
 	 decode_number (operand, nominal_width);
 
     num_subs = _cairo_array_num_elements (local_sub_index);
-    *local_subs_used = _cairo_calloc_ab (num_subs, sizeof (cairo_bool_t));
-    if (unlikely (*local_subs_used == NULL))
-	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
+    if (num_subs > 0) {
+	*local_subs_used = _cairo_calloc_ab (num_subs, sizeof (cairo_bool_t));
+	if (unlikely (*local_subs_used == NULL))
+	    return _cairo_error (CAIRO_STATUS_NO_MEMORY);
+    } else {
+	*local_subs_used = NULL;
+    }
 
     if (num_subs < 1240)
 	*local_sub_bias = 107;
