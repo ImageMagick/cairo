@@ -50,7 +50,7 @@
 # define CAIRO_END_DECLS
 #endif
 
-#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(CAIRO_WIN32_STATIC_BUILD)
+#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined (_LIB)
 # define _cairo_export __declspec(dllexport)
 # define _cairo_import __declspec(dllimport)
 #elif defined(__GNUC__) && (__GNUC__ >= 4)
