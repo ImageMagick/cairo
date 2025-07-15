@@ -1,4 +1,4 @@
-[DLL]
+[DYNAMIC_LIBRARY]
 
 [LICENSE]
 COPYING-LGPL-2.1
@@ -7,36 +7,39 @@ COPYING-LGPL-2.1
 CAIRO_FEATURES_H
 CAIRO_COMPILATION
 
-[DIRECTORIES]
-src
-src\win32
-
 [INCLUDES]
 src
-freetype->include
-glib->.
-pixman->pixman
-png->.
-zlib->.
+
+[INCLUDE_ARTIFACTS]
+src\cairo.h -> .
+src\cairo-deprecated.h -> .
+src\cairo-features.h -> .
+src\cairo-version.h -> .
+src\cairo-win32.h -> .
 
 [EXCLUDES]
-check-link.c
-cairo-dwrite-font.cpp
-cairo-image-mask-compositor.c
-cairo-quartz*
-cairo-tee*
-cairo-xcb*
-cairo-xlib*
-check-has-hidden-symbols.c
+boilerplate\
+doc\
+meson-cc-tests\
+perf\
+src\cairo-image-mask-compositor.c
+src\cairo-quartz
+src\cairo-tee
+src\cairo-xcb
+src\cairo-xlib
+src\win32\cairo-dwrite-font.cpp
+subprojects\
+test\
+util\
 
-[DEPENDENCIES]
+[REFERENCES]
 freetype
 glib
 pixman
 png
 zlib
 
-[CONFIG_DEFINE]
+[MAGICK_BASECONFIG_DEFINE]
 /*
   Define to use the CAIRO library
 */
