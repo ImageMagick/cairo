@@ -1,10 +1,28 @@
 [DYNAMIC_LIBRARY]
 
+[VERSION]
+1.18.4
+
+[RELEASE_DATE]
+2025-03-08
+
+[PRODUCT_NAME]
+cairo
+
+[COMPANY_NAME]
+Cairo library
+
+[URL]
+http://cairographics.org
+
+[COPYRIGHT]
+Copyright © 2013
+
 [LICENSE_FILE]
-COPYING-LGPL-2.1
+COPYING-MPL-1.1
 
 [LICENSE_IDENTIFIER]
-LGPL-2.1-or-later
+MPL-1.1
 
 [DEFINES]
 CAIRO_FEATURES_H
