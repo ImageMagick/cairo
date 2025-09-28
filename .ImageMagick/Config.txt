@@ -13,7 +13,7 @@ cairo
 Cairo library
 
 [URL]
-http://cairographics.org
+https://cairographics.org
 
 [COPYRIGHT]
 Copyright © 2013
