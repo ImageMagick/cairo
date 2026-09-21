@@ -48,7 +48,6 @@ src\cairo-quartz
 src\cairo-tee
 src\cairo-xcb
 src\cairo-xlib
-src\win32\cairo-dwrite-font.cpp
 subprojects\
 test\
 util\
