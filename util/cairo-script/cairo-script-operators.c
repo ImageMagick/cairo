@@ -46,11 +46,6 @@
 #include <stdlib.h> /* mkstemp */
 #include <string.h>
 
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES /* for M_LN2, M_PI and M_SQRT2 on win32 */
-#define snprintf _snprintf
-#endif
-
 #include <math.h>
 #include <limits.h> /* INT_MAX */
 #include <assert.h>
@@ -1758,46 +1753,47 @@ _mmap_bytes (const struct mmap_vec *vec, int count)
 static void *
 inflate_string (csi_t *ctx, csi_string_t *src)
 {
-    uLongf len;
     uint8_t *bytes;
 
-    len = src->deflate;
-    bytes = _csi_alloc (ctx, len + 1);
+    bytes = _csi_alloc (ctx, src->deflate + 1);
     if (bytes == NULL)
 	return NULL;
 
     switch (src->method) {
-    default:
-    case NONE:
-	free (bytes);
-	return NULL;
-
     case ZLIB:
+    {
 #if HAVE_ZLIB
-	if (uncompress ((Bytef *) bytes, &len,
-			(Bytef *) src->string, src->len) != Z_OK)
-#endif
+        uLongf length = src->deflate;
+	if (uncompress ((Bytef *) bytes, &length,
+			(Bytef *) src->string, src->len) == Z_OK)
 	{
-	    _csi_free (ctx, bytes);
-	    return NULL;
+            bytes[length] = '\0';
+            return bytes;
 	}
-	break;
-
-    case LZO:
-#if HAVE_LZO
-	if (lzo2a_decompress ((Bytef *) src->string, src->len,
-			      (Bytef *) bytes, &len,
-			      NULL))
 #endif
-	{
-	    _csi_free (ctx, bytes);
-	    return NULL;
-	}
 	break;
     }
+    case LZO:
+    {
+#if HAVE_LZO
+        lzo_uint length = src->deflate;
+	if (lzo2a_decompress ((Bytef *) src->string, src->len,
+			      (Bytef *) bytes, &length,
+			      NULL) == LZO_E_OK)
+	{
+            bytes[length] = '\0';
+            return bytes;
+	}
+#endif
+	break;
+    }
+    case NONE:
+    default:
+        break;
+    }
 
-    bytes[len] = '\0';
-    return bytes;
+    _csi_free (ctx, bytes);
+    return NULL;
 }
 
 static csi_status_t
@@ -2982,7 +2978,6 @@ _image_read_raw (csi_t *ctx,
 	len == src->datum.string->deflate)
     {
 	csi_string_t *s = src->datum.string;
-	unsigned long out = s->deflate;
 
 	switch (s->method) {
 	default:
@@ -2992,21 +2987,27 @@ err_decompress:
 	    return _csi_error (CSI_STATUS_READ_ERROR);
 
 	case ZLIB:
+        {
 #if HAVE_ZLIB
+            uLongf out = s->deflate;
 	    if (uncompress ((Bytef *) data, &out,
 			    (Bytef *) s->string, s->len) != Z_OK)
 #endif
 		goto err_decompress;
 	    break;
+        }
 
 	case LZO:
+        {
 #if HAVE_LZO
+            lzo_uint out = s->deflate;
 	    if (lzo2a_decompress ((Bytef *) s->string, s->len,
 				  (Bytef *) data, &out,
 				  NULL))
 #endif
 		goto err_decompress;
 	    break;
+        }
 	}
     }
     else

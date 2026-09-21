@@ -31,12 +31,6 @@
 #include <stdlib.h>
 #include <cairo.h>
 
-#if CAIRO_HAS_PDF_SURFACE && CAIRO_HAS_PS_SURFACE && CAIRO_HAS_SVG_SURFACE
-
-#include <cairo-pdf.h>
-#include <cairo-ps.h>
-#include <cairo-svg.h>
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #include <errno.h>
@@ -44,6 +38,12 @@
 
 #include "cairo-test.h"
 #include "buffer-diff.h"
+
+#if CAIRO_HAS_PDF_SURFACE && CAIRO_HAS_PS_SURFACE && CAIRO_HAS_SVG_SURFACE
+
+#include <cairo-pdf.h>
+#include <cairo-ps.h>
+#include <cairo-svg.h>
 
 /* This test is to ensure that _cairo_recording_surface_replay_and_create_regions()
  * works with a recording surface source re-used for multiple paginated surfaces.
@@ -425,11 +425,20 @@ preamble (cairo_test_context_t *ctx)
     return ret;
 }
 
+#else
+
+static cairo_test_status_t
+preamble (cairo_test_context_t *ctx)
+{
+    cairo_test_log (ctx, "PDF, PS, SVG features required. Skipping\n");
+    return CAIRO_TEST_UNTESTED;
+}
+
+#endif /* CAIRO_HAS_PDF_SURFACE && CAIRO_HAS_PS_SURFACE && CAIRO_HAS_SVG_SURFACE */
+
 CAIRO_TEST (create_regions,
 	    "Check region analysis when re-used with different surfaces",
 	    "fallback", /* keywords */
 	    NULL, /* requirements */
 	    0, 0,
 	    preamble, NULL)
-
-#endif /* CAIRO_HAS_PDF_SURFACE && CAIRO_HAS_PS_SURFACE && CAIRO_HAS_SVG_SURFACE */

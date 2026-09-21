@@ -100,7 +100,7 @@
  */
 #define CAIRO_BITSWAP8(c) ((((c) * 0x0802LU & 0x22110LU) | ((c) * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16)
 
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#if defined(__GNUC__)
 #ifdef __MINGW32__
 #define CAIRO_PRINTF_FORMAT(fmt_index, va_index)                        \
 	__attribute__((__format__(__MINGW_PRINTF_FORMAT, fmt_index, va_index)))
@@ -143,7 +143,7 @@ static void *_dlhandle = RTLD_NEXT;
 #endif
 #define BUCKET(b, ptr) (((uintptr_t) (ptr) >> PTR_SHIFT) % ARRAY_LENGTH (b))
 
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#if defined(__GNUC__) && defined(__OPTIMIZE__)
 #define _BOOLEAN_EXPR(expr)                   \
  __extension__ ({                             \
    int _boolean_var_;                         \
@@ -220,7 +220,7 @@ static void _init_trace (void);
 
 #define INIT_TRACE_ONCE() pthread_once (&once_control, _init_trace)
 
-#if __GNUC__ >= 3 && defined(__ELF__) && !defined(__sun)
+#if defined(__GNUC__) && defined(__ELF__) && !defined(__sun)
 # define _enter_trace() INIT_TRACE_ONCE ()
 # define _exit_trace()  do { } while (0)
 # define _should_trace() 1

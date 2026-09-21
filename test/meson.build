@@ -30,6 +30,8 @@ test_sources = [
   'bug-431.c',
   'bug-448.c',
   'bug-535.c',
+  'bug-927.c',
+  'bug-976.c',
   'bug-51910.c',
   'bug-75705.c',
   'bug-84115.c',
@@ -294,6 +296,7 @@ test_sources = [
   'record-transform-paint.c',
   'record-write-png.c',
   'recording-ink-extents.c',
+  'recording-ink-extents-overflow.c',
   'recording-surface-pattern.c',
   'recording-surface-extend.c',
   'rectangle-rounding-error.c',
@@ -669,6 +672,14 @@ if build_machine.system() != 'windows'
   run_command('ln', '-sfn',
               meson.current_source_dir(),
               meson.current_build_dir() / 'srcdir',
+              check: true)
+elif not fs.exists(meson.current_build_dir() / 'srcdir')
+  cmd = find_program(find_program('cmd').full_path().replace('/', '\\'))
+  run_command(cmd, '/C', 'mklink', '/j', '%LINK%', '%TARGET%',
+              env: [
+                'LINK="@0@"'.format(meson.current_build_dir() / 'srcdir'),
+                'TARGET="@0@"'.format(meson.current_source_dir()),
+              ],
               check: true)
 endif
 

@@ -73,7 +73,7 @@
 #define CAIRO_BOILERPLATE_DEBUG(x)
 #endif
 
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#if defined (__GNUC__)
 #ifdef __MINGW32__
 #define CAIRO_BOILERPLATE_PRINTF_FORMAT(fmt_index, va_index)            \
 	__attribute__((__format__(__MINGW_PRINTF_FORMAT, fmt_index, va_index)))

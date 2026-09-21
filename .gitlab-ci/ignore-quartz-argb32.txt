@@ -2,6 +2,7 @@ bug-361
 bug-431
 bug-image-compositor
 clip-operator
+coverage-column-triangles
 coverage-rhombus
 culled-glyphs
 extended-blend-alpha

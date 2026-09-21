@@ -950,8 +950,14 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
     /* compute the size of the final bitmap */
     ftbit = &slot->bitmap;
 
+    /* Reject absurd glyph dimensions to avoid overflow below. */
+    if (ftbit->width > INT_MAX / 4 || ftbit->rows > INT_MAX) {
+      return -1;
+    }
+
     width = ftbit->width;
     height = ftbit->rows;
+
     pitch = (width + 3) & ~3;
 
     switch (ftbit->pixel_mode) {
@@ -1003,7 +1009,12 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
     target->pitch = pitch;
     target->buffer = NULL;
 
-    return pitch * height;
+    /* Reject this size if the multiplication would overflow an int. */
+    size_t result;
+    if (_cairo_mul_size_t_overflow(pitch, height, &result) || result > INT_MAX)
+	return -1;
+
+    return (int) result;
 }
 
 /* this functions converts the glyph bitmap found in a FT_GlyphSlot

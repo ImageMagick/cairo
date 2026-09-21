@@ -41,6 +41,13 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+#endif
+
 #include <cairo.h>
 
 #if CAIRO_HAS_PDF_SURFACE

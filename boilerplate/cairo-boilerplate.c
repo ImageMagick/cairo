@@ -906,8 +906,13 @@ cairo_boilerplate_open_any2ppm (const char   *filename,
 #endif
 
     any2ppm = getenv ("ANY2PPM");
-    if (any2ppm == NULL)
-	any2ppm = "./any2ppm";
+    if (any2ppm == NULL) {
+#ifndef _WIN32
+        any2ppm = "./any2ppm";
+#else
+        any2ppm = ".\\any2ppm";
+#endif
+    }
 
 #if HAS_DAEMON
     if (flags & CAIRO_BOILERPLATE_OPEN_NO_DAEMON)
@@ -945,7 +950,11 @@ POPEN:
 
     *close_cb = pclose;
     sprintf (command, "%s %s %d", any2ppm, filename, page);
+#ifndef _WIN32
     return popen (command, "r");
+#else
+    return popen (command, "rb");
+#endif
 }
 
 static cairo_bool_t

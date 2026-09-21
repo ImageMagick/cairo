@@ -98,7 +98,7 @@
 #endif
 
 
-#if __GNUC__ >= 3
+#if defined (__GNUC__)
 #define csi_pure __attribute__((pure))
 #define csi_const __attribute__((const))
 #else
@@ -106,7 +106,7 @@
 #define csi_const
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#if defined(__GNUC__) && defined(__OPTIMIZE__)
 #define _CSI_BOOLEAN_EXPR(expr)                   \
  __extension__ ({                               \
    int _csi_boolean_var_;                         \
@@ -133,7 +133,7 @@
     (type *)((char *) (ptr) - (char *) &((type *)0)->member)
 #endif
 
-#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) && defined(__ELF__) && !defined(__sun)
+#if defined(__GNUC__) && defined(__ELF__) && !defined(__sun)
 #define csi_private_no_warn	__attribute__((__visibility__("hidden")))
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)
 #define csi_private_no_warn	__hidden

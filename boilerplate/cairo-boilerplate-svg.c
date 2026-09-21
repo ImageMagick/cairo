@@ -186,8 +186,13 @@ _cairo_boilerplate_svg_surface_write_to_png (cairo_surface_t *surface,
     char    command[4096];
     int exitstatus;
 
-    sprintf (command, "./svg2png %s %s",
-	     ptc->filename, filename);
+    sprintf (command,
+#ifndef _WIN32
+             "./svg2png %s %s",
+#else
+             ".\\svg2png %s %s",
+#endif
+             ptc->filename, filename);
 
     exitstatus = system (command);
 #if _XOPEN_SOURCE && HAVE_SIGNAL_H

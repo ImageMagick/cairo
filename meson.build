@@ -35,6 +35,11 @@ else
   cairo_libversion = '@0@.@1@.@2@'.format(cairo_version_sonum, cairo_version, cairo_version_micro)
 endif
 
+# Use a stable compatibility version for Darwin dylibs so cairo is suitable for distribution as a
+# system library.  The compatibility version is pinned at 1.0 while the current version tracks the
+# release, keeping clients from needing to relink on every release.
+cairo_darwin_versions = ['1.0', '@0@.@1@.@2@'.format(cairo_version_major, cairo_version_minor, cairo_version_micro)]
+
 conf = configuration_data()
 
 cc = meson.get_compiler('c')
@@ -76,7 +81,7 @@ if cc.get_id() != 'msvc'
   endif
 
   supported_cflags = cc.get_supported_arguments(cflags)
-  add_project_arguments(supported_cflags, language: 'c')
+  add_project_arguments(supported_cflags, language: ['c', 'cpp'])
 
   # We only wish to enable attribute(warn_unused_result) if we can prevent
   # gcc from generating thousands of warnings about the misapplication of the
@@ -90,15 +95,23 @@ if cc.get_id() != 'msvc'
   conf.set('WARN_UNUSED_RESULT', warn_unused_result)
 endif
 
-if cc.get_id() == 'msvc'
+if cc.get_argument_syntax() == 'msvc'
   # Basic usage in the cairo type system that causes spammy and useless warnings
   add_project_arguments('/wd4244', '/wd4146',
                         # Don't warn about double -> float truncation
                         '/wd4305',
-                        language : 'c')
+                        # Don't warn about _cairo_status -> _cairo_int_status conversion
+                        '/wd5286',
+                        # Turn "<function> undefined, assuming extern returning int" to an error
+                        '/we4013',
+                        language : ['c', 'cpp'])
+  add_project_arguments(['-D_CRT_SECURE_NO_WARNINGS',
+                         '-D_CRT_NONSTDC_NO_WARNINGS',
+                         '-D_USE_MATH_DEFINES',
+                        ], language : ['c', 'cpp'])
 endif
 
-add_project_arguments('-D_GNU_SOURCE', language: 'c')
+add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 
 pkgmod = import('pkgconfig')
 python3 = import('python').find_installation()
@@ -145,8 +158,12 @@ check_headers = [
 check_types = [
   ['uint64_t', {'headers': ['stdint.h']}],
   ['uint128_t', {'headers': ['stdint.h']}],
-  ['__uint128_t']
 ]
+
+# https://github.com/llvm/llvm-project/issues/25679
+if cc.get_id() != 'clang-cl'
+  check_types += [ ['__uint128_t'] ]
+endif
 
 check_funcs = [
   'alarm',
@@ -513,15 +530,12 @@ if host_machine.system() == 'windows'
   ]
 
   cpp_compiler = meson.get_compiler('cpp')
-  d2d_dep = cpp_compiler.find_library('d2d1', required: get_option('dwrite'))
-  dwrite_dep = cpp_compiler.find_library('dwrite', required: get_option('dwrite'))
-  d2d_header = cpp_compiler.has_header('d2d1.h')
-  d2d_3_header = cpp_compiler.has_header('d2d1_3.h')
-  dwrite_header = cpp_compiler.has_header('dwrite.h')
-  wincodec_dep = cpp_compiler.find_library('windowscodecs', required: get_option('dwrite'))
-  wincodec_header = cpp_compiler.has_header('wincodec.h')
 
-  if d2d_dep.found() and dwrite_dep.found() and d2d_header and dwrite_header and wincodec_dep.found() and wincodec_header
+  if get_option('dwrite').allowed()
+    d2d_dep = cpp_compiler.find_library('d2d1')
+    dwrite_dep = cpp_compiler.find_library('dwrite')
+    wincodec_dep = cpp_compiler.find_library('windowscodecs')
+
     feature_conf.set('CAIRO_HAS_DWRITE_FONT', 1)
     built_features += [{
       'name': 'cairo-dwrite-font',
@@ -530,13 +544,43 @@ if host_machine.system() == 'windows'
     }]
     deps += [dwrite_dep, d2d_dep, wincodec_dep]
 
-    if cpp_compiler.has_header('d2d1_3.h')
-      conf.set('HAVE_D2D1_3_H', 1)
+    sdk_version_args = [
+      '-DWINVER=_WIN32_WINNT_WIN10',
+      '-D_WIN32_WINNT=_WIN32_WINNT_WIN10',
+      # DWrite / D2D headers define types conditionally on the value of NTDDI_VERSION.
+      # Use an high version to avoid including definitions in-tree. 0x0A000010 ==
+      # NTDDI_WIN11_GE; using the number to stay compatible with not bleeding-edge SDK
+      # headers.
+      '-DNTDDI_VERSION=0x0A000010',
+    ]
+
+    foreach i : range(8, 9)
+      if cpp_compiler.has_type('IDWriteFactory' + i.to_string(),
+                               prefix: ['#include <windows.h>', '#include <dwrite_3.h>'],
+                               args: sdk_version_args)
+        conf.set('HAVE_IDWRITEFACTORY' + i.to_string(), 1)
+      endif
+    endforeach
+
+    if cpp_compiler.has_header('d2d1_2.h')
+      conf.set('HAVE_D2D1_2_H', 1)
     endif
 
-    add_project_arguments('-DWINVER=_WIN32_WINNT_WIN10', '-D_WIN32_WINNT=_WIN32_WINNT_WIN10', '-DNTDDI_VERSION=NTDDI_WIN10_RS3', language: ['c', 'cpp'])
+    if cpp_compiler.has_header('d2d1_3.h')
+      conf.set('HAVE_D2D1_3_H', 1)
+
+      foreach i : range(2, 8)
+        if cpp_compiler.has_type('ID2D1DeviceContext' + i.to_string(),
+                                 prefix: ['#include <windows.h>', '#include <d2d1_3.h>'],
+                                 args: sdk_version_args)
+          conf.set('HAVE_ID2D1DEVICECONTEXT' + i.to_string(), 1)
+        endif
+      endforeach
+    endif
+
+    add_project_arguments(sdk_version_args, language: ['c', 'cpp'])
   else
-    add_project_arguments('-DWINVER=_WIN32_WINNT_WIN2K', '-D_WIN32_WINNT=_WIN32_WINNT_WIN2K', language: ['c', 'cpp'])
+    add_project_arguments('-DWINVER=_WIN32_WINNT_VISTA', '-D_WIN32_WINNT=_WIN32_WINNT_VISTA', language: ['c', 'cpp'])
   endif
 endif
 
@@ -733,7 +777,7 @@ endforeach
 extra_link_args += pthread_link_args
 
 # Atomics are an optional feature in C11. Also need to check that C11 atomics are lock free.
-# Windows can't use C11 atomics as some files are compiled with C++.
+# On Windows we use the Interlocked family of functions
 if host_machine.system() != 'windows'
   if cc.links(files('meson-cc-tests/atomic-ops-c11.c'), name: 'Atomic ops: c11')
     conf.set('HAVE_C11_ATOMIC_PRIMITIVES', 1)

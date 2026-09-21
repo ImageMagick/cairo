@@ -87,6 +87,10 @@
 #include <fcntl.h>
 #endif
 
+#ifdef _WIN32
+#include <io.h>
+#endif
+
 #if HAVE_UNISTD_H && HAVE_SIGNAL_H && HAVE_SYS_STAT_H && HAVE_SYS_SOCKET_H && (HAVE_POLL_H || HAVE_SYS_POLL_H) && HAVE_SYS_UN_H
 #include <signal.h>
 #include <sys/stat.h>

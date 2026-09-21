@@ -175,6 +175,7 @@ cairo_feature_sources = {
     'win32/cairo-win32-surface.c',
     'win32/cairo-win32-display-surface.c',
     'win32/cairo-win32-printing-surface.c',
+    'win32/cairo-win32-thread-data.c',
   ],
   'cairo-win32-font': [
     'win32/cairo-win32-font.c',
@@ -248,6 +249,7 @@ libcairo = library('cairo', cairo_sources,
   gnu_symbol_visibility: 'hidden',
   soversion: cairo_version_sonum,
   version: cairo_libversion,
+  darwin_versions: cairo_darwin_versions,
   install: true,
   include_directories: incbase,
 )

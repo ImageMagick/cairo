@@ -30,179 +30,161 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <assert.h>
 
 static const cairo_user_data_key_t win32_closure_key;
 
 typedef struct _win32_target_closure {
-    HWND wnd;
-    HDC dc;
-    ATOM bpl_atom;
-    cairo_surface_t *surface;
+    HBITMAP hbitmap;     /* Bitmap */
+    void *data;          /* Bitmap data */
+    HDC hdc;             /* Memory DC with bitmap selected */
 } win32_target_closure_t;
 
 static void
-_cairo_boilerplate_win32_cleanup_window_surface (void *closure)
+_cairo_boilerplate_win32_cleanup_ddb_surface (void *closure)
 {
     win32_target_closure_t *win32tc = closure;
 
     if (win32tc != NULL)
     {
-	if (win32tc->wnd != NULL &&
-	    ReleaseDC (win32tc->wnd, win32tc->dc) != 1)
-	    fprintf (stderr,
-		     "Failed to release DC of a test window when cleaning up.\n");
-	if (win32tc->wnd != NULL &&
-	    DestroyWindow (win32tc->wnd) == 0)
-	    fprintf (stderr,
-		     "Failed to destroy a test window when cleaning up, GLE is %lu.\n",
-		     GetLastError ());
-	if (win32tc->bpl_atom != 0 &&
-	    UnregisterClassA ((LPCSTR) MAKELPARAM (win32tc->bpl_atom, 0), GetModuleHandle (NULL)) == 0 &&
-	    GetLastError () != ERROR_CLASS_DOES_NOT_EXIST)
-	    fprintf (stderr,
-		     "Failed to unregister boilerplate window class, GLE is %lu.\n",
-		     GetLastError ());
+        if (win32tc->hdc != NULL) {
+            /* https://devblogs.microsoft.com/oldnewthing/20100416-00/?p=14313 */
+            SelectObject (win32tc->hdc, CreateBitmap (0, 0, 1, 1, NULL));
 
-	free (win32tc);
+            if (!DeleteDC (win32tc->hdc)) {
+                fprintf (stderr, "%s failed during cleanup\n", "DeleteDC");
+            }
+        }
+
+        if (win32tc->hbitmap) {
+            if (!DeleteObject (win32tc->hbitmap)) {
+                fprintf (stderr, "%s failed during cleanup\n", "DeleteObject");
+            }
+        }
+
+        free (win32tc);
     }
-}
-
-static win32_target_closure_t *
-_cairo_boilerplate_win32_create_window (int width,
-					int height)
-{
-    WNDCLASSEXA wincl;
-    win32_target_closure_t *win32tc;
-    LPCSTR window_class_name;
-
-    ZeroMemory (&wincl, sizeof (WNDCLASSEXA));
-    wincl.cbSize = sizeof (WNDCLASSEXA);
-    wincl.hInstance = GetModuleHandle (0);
-    wincl.lpszClassName = "cairo_boilerplate_win32_dummy";
-    wincl.lpfnWndProc = DefWindowProcA;
-    wincl.style = CS_OWNDC;
-
-    win32tc = calloc (1, sizeof (win32_target_closure_t));
-
-    if (win32tc == NULL)
-    {
-	int error = errno;
-	fprintf (stderr, "Ran out of memory: %d.\n", error);
-	return NULL;
-    }
-
-    ZeroMemory (win32tc, sizeof (win32_target_closure_t));
-
-    win32tc->bpl_atom = RegisterClassExA (&wincl);
-
-    if (win32tc->bpl_atom == 0 && GetLastError () != ERROR_CLASS_ALREADY_EXISTS)
-    {
-	fprintf (stderr,
-		 "Failed to register a boilerplate window class, GLE is %lu.\n",
-		 GetLastError ());
-	_cairo_boilerplate_win32_cleanup_window_surface (win32tc);
-	return NULL;
-    }
-
-    if (win32tc->bpl_atom == 0)
-	window_class_name = wincl.lpszClassName;
-    else
-	window_class_name = (LPCSTR) MAKELPARAM (win32tc->bpl_atom, 0);
-
-    win32tc->wnd = CreateWindowExA (WS_EX_TOOLWINDOW,
-				    window_class_name,
-				    0,
-				    WS_POPUP,
-				    0,
-				    0,
-				    width,
-				    height,
-				    0,
-				    0,
-				    0,
-				    0);
-
-    if (win32tc->wnd == NULL)
-    {
-	fprintf (stderr,
-		 "Failed to create a test window, GLE is %lu.\n",
-		 GetLastError ());
-	_cairo_boilerplate_win32_cleanup_window_surface (win32tc);
-	return NULL;
-    }
-
-    win32tc->dc = GetDC (win32tc->wnd);
-
-    if (win32tc->dc == NULL)
-    {
-	fprintf (stderr, "Failed to get test window DC.\n");
-	_cairo_boilerplate_win32_cleanup_window_surface (win32tc);
-	return NULL;
-    }
-
-    SetWindowPos (win32tc->wnd,
-		  HWND_BOTTOM,
-		  INT_MIN,
-		  INT_MIN,
-		  width,
-		  height,
-		  SWP_NOACTIVATE | SWP_SHOWWINDOW);
-
-    return win32tc;
 }
 
 static cairo_surface_t *
-_cairo_boilerplate_win32_create_window_surface (const char		  *name,
-						cairo_content_t		   content,
-						double			   width,
-						double			   height,
-						double			   max_width,
-						double			   max_height,
-						cairo_boilerplate_mode_t   mode,
-						void			 **closure)
+_cairo_boilerplate_win32_create_ddb_surface (const char                *name,
+                                             cairo_content_t            content,
+                                             double                     width,
+                                             double                     height,
+                                             double                     max_width,
+                                             double                     max_height,
+                                             cairo_boilerplate_mode_t   mode,
+                                             void                     **closure)
 {
-    win32_target_closure_t *win32tc;
-    cairo_surface_t *surface;
+    win32_target_closure_t *win32tc = NULL;
     cairo_format_t format;
+    cairo_surface_t *surface;
     cairo_status_t status;
+    WORD pixel_bits;
+    struct {
+        BITMAPINFOHEADER header;
+        RGBQUAD color_table[256];
+    } bitmap_desc = {0};
+    HBITMAP hbitmap_old;
 
-    win32tc = _cairo_boilerplate_win32_create_window (width, height);
+    if (width < 1.0)
+        width = 1.0;
+    if (height < 1.0)
+        height = 1.0;
 
-    if (win32tc == NULL)
-	return NULL;
+    win32tc = calloc (1, sizeof (win32_target_closure_t));
+    if (win32tc == NULL) {
+        fprintf (stderr, "%s failed with errno %d\n", "calloc", errno);
+        *closure = NULL;
+        return NULL;
+    }
 
-    format = cairo_boilerplate_format_from_content (content);
+    memset (win32tc, 0, sizeof (*win32tc));
 
-    surface = cairo_win32_surface_create_with_format (win32tc->dc, format);
+    *closure = win32tc;
 
-    win32tc->surface = surface;
+    switch (content) {
+        case CAIRO_CONTENT_COLOR:
+            format = CAIRO_FORMAT_RGB24;
+            pixel_bits = 32;
+            break;
+        case CAIRO_CONTENT_COLOR_ALPHA:
+            format = CAIRO_FORMAT_ARGB32;
+            pixel_bits = 32;
+            break;
+        case CAIRO_CONTENT_ALPHA:
+            format = CAIRO_FORMAT_A8;
+            pixel_bits = 8;
+            break;
+        default:
+            assert (0); /* not reached */
+            format = CAIRO_FORMAT_INVALID;
+            break;
+    }
+
+    if (pixel_bits <= 8) {
+        assert (pixel_bits == 8);
+
+        for (BYTE i = 0; i <= 255; i++) {
+            bitmap_desc.color_table[i].rgbBlue = i;
+            bitmap_desc.color_table[i].rgbGreen = i;
+            bitmap_desc.color_table[i].rgbRed = i;
+            bitmap_desc.color_table[i].rgbReserved = 0;
+        }
+    }
+
+    assert (width < (double)LONG_MAX);
+    assert (height < (double)LONG_MAX);
+
+    bitmap_desc.header.biSize = sizeof (bitmap_desc.header);
+    bitmap_desc.header.biWidth = (LONG)width;
+    bitmap_desc.header.biHeight = -(LONG)height; /* a negative height tells GDI to
+                                                    use a top-down coordinate system */
+    bitmap_desc.header.biPlanes = 1;
+    bitmap_desc.header.biBitCount = pixel_bits;
+    bitmap_desc.header.biCompression = BI_RGB;
+
+    /* From https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createdibsection:
+     * CreateDIBSection does not use the parameters biXPelsPerMeter or biYPelsPerMeter */
+
+    win32tc->hbitmap = CreateDIBSection (NULL, (BITMAPINFO*)&bitmap_desc, DIB_RGB_COLORS, &win32tc->data, NULL, 0);
+    if (win32tc->hbitmap == NULL) {
+        fprintf (stderr, "%s failed with error code %u\n", "CreateDIBSection", (unsigned int) GetLastError ());
+        return NULL;
+    }
+
+    win32tc->hdc = CreateCompatibleDC (NULL);
+    if (win32tc->hdc == NULL) {
+        fprintf (stderr, "%s failed\n", "CreateCompatibleDC");
+        return NULL;
+    }
+
+    hbitmap_old = SelectObject (win32tc->hdc, win32tc->hbitmap);
+    assert (hbitmap_old == CreateBitmap (0, 0, 1, 1, NULL));
+
+    surface = cairo_win32_surface_create_with_format (win32tc->hdc, format);
 
     status = cairo_surface_status (surface);
 
-    if (status != CAIRO_STATUS_SUCCESS)
-    {
+    if (status != CAIRO_STATUS_SUCCESS) {
 	fprintf (stderr,
 		 "Failed to create the test surface: %s [%d].\n",
 		 cairo_status_to_string (status), status);
-	_cairo_boilerplate_win32_cleanup_window_surface (win32tc);
+        cairo_surface_destroy (surface);
+        _cairo_boilerplate_win32_cleanup_ddb_surface (win32tc);
 	return NULL;
     }
 
     status = cairo_surface_set_user_data (surface, &win32_closure_key, win32tc, NULL);
 
-    if (status != CAIRO_STATUS_SUCCESS)
-    {
+    if (status != CAIRO_STATUS_SUCCESS) {
 	fprintf (stderr,
 		 "Failed to set surface userdata: %s [%d].\n",
 		 cairo_status_to_string (status), status);
-
-	cairo_surface_destroy (surface);
-	_cairo_boilerplate_win32_cleanup_window_surface (win32tc);
-
+        cairo_surface_destroy (surface);
+	_cairo_boilerplate_win32_cleanup_ddb_surface (win32tc);
 	return NULL;
     }
-
-    *closure = win32tc;
 
     return surface;
 }
@@ -228,7 +210,7 @@ _cairo_boilerplate_win32_create_dib_surface (const char		       *name,
 
 static const cairo_boilerplate_target_t targets[] = {
     {
-	"win32", "win32", NULL, NULL,
+	"win32-DIB", "win32", NULL, NULL,
 	CAIRO_SURFACE_TYPE_WIN32, CAIRO_CONTENT_COLOR, 0,
 	"cairo_win32_surface_create_with_dib",
 	_cairo_boilerplate_win32_create_dib_surface,
@@ -242,11 +224,11 @@ static const cairo_boilerplate_target_t targets[] = {
 	NULL,
 	TRUE, FALSE, FALSE
     },
-    /* Testing the win32 surface isn't interesting, since for
-     * ARGB images it just chains to the image backend
+    /* Testing the win32 surface for ARGB32 DIBs isn't interesting,
+     * since it just chains to the image backend
      */
     {
-	"win32", "win32", NULL, NULL,
+        "win32-DIB", "win32", NULL, NULL,
 	CAIRO_SURFACE_TYPE_WIN32, CAIRO_CONTENT_COLOR_ALPHA, 0,
 	"cairo_win32_surface_create_with_dib",
 	_cairo_boilerplate_win32_create_dib_surface,
@@ -261,31 +243,31 @@ static const cairo_boilerplate_target_t targets[] = {
 	FALSE, FALSE, FALSE
     },
     {
-	"win32-window-color", "win32", NULL, NULL,
+	"win32-DDB", "win32", NULL, NULL,
 	CAIRO_SURFACE_TYPE_WIN32, CAIRO_CONTENT_COLOR, 1,
 	"cairo_win32_surface_create",
-	_cairo_boilerplate_win32_create_window_surface,
+	_cairo_boilerplate_win32_create_ddb_surface,
 	cairo_surface_create_similar,
 	NULL,
 	NULL,
 	_cairo_boilerplate_get_image_surface,
 	cairo_surface_write_to_png,
-	_cairo_boilerplate_win32_cleanup_window_surface,
+	_cairo_boilerplate_win32_cleanup_ddb_surface,
 	NULL,
 	NULL,
 	FALSE, FALSE, FALSE
     },
     {
-	"win32-window-coloralpha", "win32", NULL, NULL,
+	"win32-DDB", "win32", NULL, NULL,
 	CAIRO_SURFACE_TYPE_WIN32, CAIRO_CONTENT_COLOR_ALPHA, 1,
 	"cairo_win32_surface_create_with_format",
-	_cairo_boilerplate_win32_create_window_surface,
+	_cairo_boilerplate_win32_create_ddb_surface,
 	cairo_surface_create_similar,
 	NULL,
 	NULL,
 	_cairo_boilerplate_get_image_surface,
 	cairo_surface_write_to_png,
-	_cairo_boilerplate_win32_cleanup_window_surface,
+	_cairo_boilerplate_win32_cleanup_ddb_surface,
 	NULL,
 	NULL,
 	FALSE, FALSE, FALSE

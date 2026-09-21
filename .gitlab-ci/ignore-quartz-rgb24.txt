@@ -10,6 +10,7 @@ bug-image-compositor
 bug-source-cu
 clip-device-offset
 clip-fill-rule-pixel-aligned
+coverage-column-triangles
 coverage-rhombus
 culled-glyphs
 device-offset

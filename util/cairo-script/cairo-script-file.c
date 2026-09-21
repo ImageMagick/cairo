@@ -162,7 +162,6 @@ csi_file_new_from_string (csi_t *ctx,
     file->base.ref = 1;
 
     if (src->deflate) {
-	uLongf len = src->deflate;
 	csi_object_t tmp_obj;
 	csi_string_t *tmp_str;
 	csi_status_t status;
@@ -179,20 +178,26 @@ csi_file_new_from_string (csi_t *ctx,
 	    break;
 
 	case ZLIB:
+        {
 #if HAVE_ZLIB
+            uLongf len = src->deflate;
 	    if (uncompress ((Bytef *) tmp_str->string, &len,
 			    (Bytef *) src->string, src->len) != Z_OK)
 #endif
 		status = _csi_error (CAIRO_STATUS_NO_MEMORY);
 	    break;
+        }
 	case LZO:
+        {
 #if HAVE_LZO
+            lzo_uint len = src->deflate;
 	    if (lzo2a_decompress ((lzo_bytep) src->string, src->len,
 				  (lzo_bytep) tmp_str->string, &len,
 				  NULL))
 #endif
 		status = _csi_error (CAIRO_STATUS_NO_MEMORY);
 	    break;
+        }
 	}
 	if (_csi_unlikely (status)) {
 	    csi_string_free (ctx, tmp_str);

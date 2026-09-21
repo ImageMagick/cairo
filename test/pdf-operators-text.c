@@ -150,9 +150,18 @@ draw (cairo_t *cr, int width, int height)
     return CAIRO_TEST_SUCCESS;
 }
 
+static cairo_test_status_t
+preamble (cairo_test_context_t *ctx)
+{
+    if (! cairo_test_is_target_enabled (ctx, "pdf"))
+        return CAIRO_TEST_UNTESTED;
+
+    return CAIRO_TEST_SUCCESS;
+}
+
 CAIRO_TEST (pdf_operators_text,
 	    "Test pdf-operators.c glyph positioning",
 	    "pdf", /* keywords */
 	    NULL, /* requirements */
 	    WIDTH, HEIGHT,
-	    NULL, draw)
+	    preamble, draw)

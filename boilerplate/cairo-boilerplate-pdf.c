@@ -171,8 +171,13 @@ _cairo_boilerplate_pdf_surface_write_to_png (cairo_surface_t *surface,
     char    command[4096];
     int exitstatus;
 
-    sprintf (command, "./pdf2png %s %s 1",
-	     ptc->filename, filename);
+    sprintf (command,
+#ifndef _WIN32
+             "./pdf2png %s %s 1",
+#else
+             ".\\pdf2png %s %s 1",
+#endif
+             ptc->filename, filename);
 
     exitstatus = system (command);
 #if _XOPEN_SOURCE && HAVE_SIGNAL_H

@@ -1595,7 +1595,10 @@ _translate_string (csi_t *ctx,
 
 #if HAVE_LZO
     if (method == NONE && buf_len > 16) {
-	unsigned long mem_len = 2*string->len > LZO2A_999_MEM_COMPRESS ? 2*string->len : LZO2A_999_MEM_COMPRESS;
+        lzo_uint mem_len = 2 * (lzo_uint)string->len;
+        if (mem_len < LZO2A_999_MEM_COMPRESS)
+            mem_len = LZO2A_999_MEM_COMPRESS;
+
 	void *mem = malloc (mem_len);
 	void *work = malloc(LZO2A_999_MEM_COMPRESS);
 
@@ -1628,7 +1631,7 @@ _translate_string (csi_t *ctx,
 		method = NONE;
 		deflate = 0;
 	    } else {
-		unsigned long mem_len = 2*string->deflate;
+		lzo_uint mem_len = 2*string->deflate;
 		void *mem = malloc (mem_len);
 		void *work = malloc(LZO2A_999_MEM_COMPRESS);
 
